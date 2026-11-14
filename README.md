@@ -10,6 +10,7 @@ Explainable, farmer-led exploration of climate-aware crop-rotation options for N
 - NASA POWER supplies the numeric daily temperature and precipitation context; its multi-model climate-scenario view is separate.
 - Small, dated global NASA POWER and GIBS samples are saved in `data/resource_samples/`; the manifest distinguishes sample assets from full archives that require product selection or authenticated access.
 - [Download the sample bundle](data/terrarotate_global_resource_samples.zip) or inspect the [download manifest](data/resource_samples/download_manifest.json) and [24-resource download status](data/resource_samples/resource_download_status.csv).
+- [Seven-slide challenge demo deck draft](demo/presentation/TerraRotate_AI_challenge_demo_v2.pptx). Replace the marked workflow panel with real app screenshots before competition submission.
 - Transparent baseline rotation comparison with explanations and limitations.
 - Seven additional input-driven analysis tools at `/tools`: vegetation patterns, water-budget scenarios, possible low-vegetation windows, NASA POWER historical climate analogues, sample-point clustering, browser-local farmer feedback, and rotation ranking sensitivity.
 - Historical climate analogues use live NASA POWER monthly data at coordinates the user supplies. The request is limited to one field and five candidate points.
@@ -45,7 +46,7 @@ cd backend
 python -m unittest discover -s tests -v
 ```
 
-The current farmer-feedback demonstration persists in the same browser only. `database/schema.sql` defines owner-scoped Supabase tables and row-level security, but is not connected to a live Supabase project. Public hosting and competition submission are not configured.
+The farmer-feedback tool works in browser-local mode by default. To enable optional Supabase account sync, create `frontend/.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from your own project, apply `database/schema.sql`, restart Next.js, and use the sign-in controls on `/tools`. The schema uses row-level security; never put a Supabase service-role key in the browser. Supabase is not connected to a live project yet. Public hosting and competition submission are not configured.
 
 ## Documentation
 

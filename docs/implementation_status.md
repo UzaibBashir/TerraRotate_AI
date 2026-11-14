@@ -19,7 +19,7 @@
 | Farmer memory and feedback | Implemented | Beta prior/posterior update and browser-local feedback history. Feedback is subjective. |
 | RotationRisk | Implemented | Ranking sensitivity across four preference profiles; explicitly withholds confidence estimates. |
 | Analysis user interface | Implemented | `/tools` page connects all module endpoints; unsupported values are not prefilled as evidence. |
-| Backend test suite | Tested | 31 unit/API tests covering module calculations, input validation and mocked NASA parsing. |
+| Backend test suite | Tested | 32 unit/API tests covering module calculations, input validation and mocked NASA parsing. |
 | Schema and RLS | Implemented | Owner-scoped Supabase schema in `database/schema.sql`; not applied to a live project. |
 | Submission documentation | Implemented | Summary, details, provenance, methodology, limitations, model-evaluation note, demo script and SI disclosure. |
 
@@ -27,10 +27,10 @@
 
 | Area | Status | Required action |
 |---|---|---|
-| Supabase persistence/authentication | Blocked | Create/configure a Supabase project, apply the SQL schema, provide project URL and anon key through local environment configuration, and complete an authenticated integration check. Do not send keys in chat. |
+| Supabase persistence/authentication | In progress | Optional Supabase sign-in and RLS-scoped feedback persistence are wired in `/tools`; browser-local storage remains the no-account fallback. Apply the SQL schema and set `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `frontend/.env.local`, then verify with a project. No project credentials were provided. |
 | Authenticated NASA archive downloads | Blocked | Set up a local Earthdata bearer token after signing in. Earthdata Login credentials are not collected here. Raw SRTM, ECOSTRESS, GLDAS, GEDI, Landsat and MODIS/VIIRS product granules have product, time, geographic and licensing choices; there is no single meaningful “download everything” global file. |
 | Partner data services | Not integrated | ESA Sentinel-2 and Copernicus ERA5 are challenge-listed partner resources, not NASA data. Access credentials, product selection and storage are not configured. |
-| Frontend production build | Blocked | The existing `node_modules` contained a locked Windows native file; `npm ci` stopped with EPERM and the project has no runnable Next binary. A build could not be verified. |
+| Frontend production build | Tested | Next.js 15.3.3 production build completed in a clean temporary copy; `.next/BUILD_ID` was created. `npm ci` in the original dependency directory is blocked by a locked Windows native file (EPERM), so that directory was not repaired. |
 | Public deployment and repository | Blocked | Requires team-controlled GitHub, hosting, DNS/domain choices, and Supabase accounts. No deployment or publication was performed. |
 | Competition submission | Not submitted | Team must review the originality, source declarations, SI disclosure, terms and final presentation, then submit personally. |
 

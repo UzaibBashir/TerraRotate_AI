@@ -15,6 +15,10 @@ def _observations(body):
     provider=str(source).strip().casefold()
     if not (provider.startswith("nasa modis") or provider.startswith("nasa landsat") or provider.startswith("nasa viirs") or provider.startswith("esa sentinel-2")):
         raise ValueError("Use an eligible challenge-listed NASA Landsat/MODIS/VIIRS product or listed ESA Sentinel-2 product and identify its version")
+    if not any(character.isdigit() for character in str(source)):
+        raise ValueError("Include the product identifier, collection, or processing version in source")
+    if str(body.get("index", "NDVI")).upper() != "NDVI":
+        raise ValueError("Only NDVI values are currently supported by the vegetation baseline")
     parsed = []
     for item in rows:
         try:

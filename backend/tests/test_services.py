@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from app import create_app
 from app.services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, fetch_power_monthly_profile
 from app.services.gibs import fetch_gibs_image
-from app.services.rotation import recommend_rotations
+from app.services.rotation import recommend_rotations, CROPS
 from app.services.intelligence import vegetation, bare_windows, water_budget, climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 
 class RotationTests(unittest.TestCase):
@@ -37,7 +37,7 @@ class RotationTests(unittest.TestCase):
         result=recommend_rotations({"current_crop":"rice"})
         for row in result["recommendations"]:
             if row["title"]!="Current crop continued":
-                self.assertTrue(all(row["sequence"][i]!=row["sequence"][i+1] or row["sequence"][i]=="rice" for i in range(2)))
+                self.assertTrue(all(CROPS[row["sequence"][i]]["family"]!=CROPS[row["sequence"][i+1]]["family"] for i in range(2)))
 
 class PowerTests(unittest.TestCase):
     @patch("app.services.power.requests.get")
@@ -83,13 +83,18 @@ class PowerTests(unittest.TestCase):
 
 class IntelligenceTests(unittest.TestCase):
     def test_vegetation_reports_missing_dates_without_diagnosis(self):
-        data=vegetation({"source":"NASA MODIS","resolution":"250m product grid","observations":[{"date":"2026-01-01","value":0.3},{"date":"2026-03-01","value":0.1}]})
+        data=vegetation({"source":"NASA MODIS MOD13Q1 v061","resolution":"250m product grid","index":"NDVI","observations":[{"date":"2026-01-01","value":0.3},{"date":"2026-03-01","value":0.1}]})
         self.assertEqual(data["observation_count"],2)
         self.assertIn("not a diagnosis",data["interpretation"])
         self.assertEqual(data["possible_low_vegetation_dates"],["2026-03-01"])
 
+    def test_vegetation_restricts_sources_to_challenge_allowlist(self):
+        with self.assertRaises(ValueError): vegetation({"source":"Unlisted commercial satellite v2","resolution":"10m","observations":[{"date":"2026-01-01","value":-0.1}]})
+        result=vegetation({"source":"NASA MODIS MOD13Q1 v061","resolution":"250m","observations":[{"date":"2026-01-01","value":-0.1}]})
+        self.assertEqual(result["observations"][0]["value"],-0.1)
+
     def test_bare_windows_never_call_fallow_verified(self):
-        data=bare_windows({"source":"NASA MODIS","resolution":"250m","observations":[{"date":"2026-01-01","value":0.1}]})
+        data=bare_windows({"source":"NASA MODIS MOD13Q1 v061","resolution":"250m","observations":[{"date":"2026-01-01","value":0.1}]})
         self.assertIn("not verified fallow",data["windows"][0]["label"])
 
     def test_water_budget_uses_manual_scenarios_and_area_conversion(self):
