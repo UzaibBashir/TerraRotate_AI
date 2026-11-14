@@ -6,7 +6,7 @@
 
 ## NASA POWER water context and water budget
 
-`/api/intelligence/water` requests daily `PRECTOTCORR`, `SFMC`, `RZMC`, and `EVPTRNS` using POWER's tested Agroclimatology API community. Parameter source grids may differ. `SFMC` and `RZMC` remain volumetric fractions; missing values remain missing. `EVPTRNS` is reported as energy flux (MJ/m²/day), not converted to an ET water depth. The budget separately uses farmer-entered field area, crop water demand, planned irrigation, and dry/normal/wet rainfall assumptions. For depth in mm and area in hectares, volume is mm × hectares × 10 m³. Effective rainfall, soil storage, conveyance loss, runoff and crop-stage timing are not modeled.
+`/api/intelligence/water` requests daily `PRECTOTCORR`, `SFMC`, `RZMC`, and `EVPTRNS` using the POWER community accepted by the tested daily point endpoint. An explicit `community=HY` request was tested against NASA POWER on 14 Nov 2026 and returned HTTP 422 (“correct user community value”), so the connector records its actual tested `AG` request. NASA POWER's hydrology guide documents the Hydrology parameter families and says daily EVPTRNS is reported in MJ/m²/day; the UI retains that energy-flux unit and does not convert it to an ET water depth. `SFMC` and `RZMC` remain volumetric fractions; missing values remain missing. Parameter source grids may differ. The budget separately uses farmer-entered field area, crop water demand, planned irrigation, and dry/normal/wet rainfall assumptions. For depth in mm and area in hectares, volume is mm × hectares × 10 m³. Effective rainfall, soil storage, conveyance loss, runoff and crop-stage timing are not modeled.
 
 ## Field intelligence and possible bare windows
 
@@ -23,6 +23,10 @@ The API ranks the current crop continued and up to two three-season alternatives
 ## Zones
 
 `/api/intelligence/zones` applies deterministic K-means-like clustering to farmer-supplied georeferenced sample points and numeric attributes. Features are standardized; coordinates influence spatial grouping. Cluster labels describe supplied samples only. The output does not create field boundaries, satellite-derived zones or high-resolution surfaces.
+
+## Field map and printable report
+
+The main page obtains rendered imagery, advertised layer legends, and zoomed bounds through the Flask NASA GIBS proxy. A point can be selected with a pointer or keyboard. A user-supplied GeoJSON Polygon is validated, drawn over the map and used for an approximate spherical area display; it is not raster-clipped or used to derive NASA field statistics. Field records are stored in browser-local storage. The print stylesheet summarizes available NASA POWER data quality and current rotation output; it does not turn missing data into a report value.
 
 ## Farmer feedback and RotationRisk
 

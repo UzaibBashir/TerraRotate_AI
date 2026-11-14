@@ -3,7 +3,7 @@ from datetime import date
 from unittest.mock import Mock, patch
 from app import create_app
 from app.services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, fetch_power_monthly_profile
-from app.services.gibs import fetch_gibs_image
+from app.services.gibs import fetch_gibs_image, fetch_gibs_legend
 from app.services.rotation import recommend_rotations, CROPS
 from app.services.intelligence import vegetation, bare_windows, water_budget, climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 from app.services.cache import ttl_cache
@@ -152,6 +152,13 @@ class GIBSTests(unittest.TestCase):
         bbox=[float(value) for value in get.call_args.kwargs["params"]["BBOX"].split(",")]
         self.assertAlmostEqual(bbox[2]-bbox[0],.45)
         self.assertAlmostEqual(bbox[3]-bbox[1],.3)
+    @patch("app.services.gibs._fetch_legend_capabilities",return_value={"MODIS_Terra_NDVI_8Day":"https://gibs.earthdata.nasa.gov/legends/MODIS_NDVI_H.png"})
+    @patch("app.services.gibs.requests.get")
+    def test_fetches_advertised_nasa_legend(self,get,_caps):
+        response=Mock();response.raise_for_status.return_value=None;response.headers={"Content-Type":"image/png"};response.content=b"legend";get.return_value=response
+        image,metadata=fetch_gibs_legend("modis_ndvi")
+        self.assertEqual(image,b"legend")
+        self.assertEqual(metadata["request_url"],"https://gibs.earthdata.nasa.gov/legends/MODIS_NDVI_H.png")
 
 class ApiTests(unittest.TestCase):
     def setUp(self): self.client = create_app().test_client()
@@ -179,6 +186,12 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.mimetype,"image/jpeg")
         self.assertEqual(response.headers["X-Data-Source"],"NASA GIBS")
+    def test_legend_proxy_returns_source_headers(self):
+        metadata={"provider":"NASA GIBS","layer":{"id":"MODIS_Terra_NDVI_8Day"},"note":"official legend"}
+        with patch("app.routes.fetch_gibs_legend",return_value=(b"legend",metadata)):
+            response=self.client.get("/api/imagery/legend?layer=modis_ndvi")
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.headers["X-Data-Layer"],"MODIS_Terra_NDVI_8Day")
     def test_rotation_endpoint(self): self.assertEqual(self.client.post("/api/rotations",json={"current_crop":"rice"}).status_code,200)
     def test_analysis_routes_require_valid_inputs(self):
         self.assertEqual(self.client.post("/api/intelligence/vegetation",json={}).status_code,400)

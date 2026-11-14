@@ -4,7 +4,8 @@ Explainable, farmer-led exploration of climate-aware crop-rotation options for N
 
 ## Working increment
 
-- Next.js dashboard for coordinates, crop, water availability, and farmer priority.
+- Next.js dashboard for global coordinates, current crop, farmer-entered soil context, water availability, and priority. Interactive NASA GIBS map supports layer/date selection, zoom, click/keyboard location selection, a farmer-provided GeoJSON boundary overlay and NASA-advertised legends where available.
+- Local field registration stores the farmer's field name, coordinates, boundary and area in this browser only. GeoJSON area is an approximate geodesic calculation. A printable field report summarizes loaded NASA POWER evidence and current rotation options.
 - Flask API queries NASA POWER daily point data (`T2M`, `PRECTOTCORR`) with provenance and missingness.
 - NASA GIBS displays listed SMAP L4 soil-moisture and GPM IMERG precipitation maps, MODIS 8-day NDVI, and MODIS/VIIRS imagery as separate visual evidence. These images are not converted into numeric field readings.
 - NASA POWER supplies the numeric daily temperature and precipitation context; its multi-model climate-scenario view is separate.
@@ -12,7 +13,8 @@ Explainable, farmer-led exploration of climate-aware crop-rotation options for N
 - [Download the sample bundle](data/terrarotate_global_resource_samples.zip) or inspect the [download manifest](data/resource_samples/download_manifest.json) and [24-resource download status](data/resource_samples/resource_download_status.csv).
 - [Seven-slide challenge demo deck draft](demo/presentation/TerraRotate_AI_challenge_demo_v3.pptx). Replace the marked workflow panel with real app screenshots before competition submission.
 - Transparent baseline rotation comparison with explanations and limitations.
-- Seven additional input-driven analysis tools at `/tools`: vegetation patterns, water-budget scenarios, possible low-vegetation windows, NASA POWER historical climate analogues, sample-point clustering, browser-local farmer feedback, and rotation ranking sensitivity.
+- Seven additional input-driven analysis tools at `/tools`: vegetation patterns, water-budget scenarios, possible low-vegetation windows, NASA POWER historical climate analogues, sample-point clustering, farmer feedback (browser-local by default, optional Supabase sync), and rotation ranking sensitivity.
+- Successful NASA POWER/GIBS responses are cached in bounded in-memory TTL caches; cache entries are temporary and are not shared across separate server workers.
 - Historical climate analogues use live NASA POWER monthly data at coordinates the user supplies. The request is limited to one field and five candidate points.
 - Optional farmer-entered soil texture, pH and organic matter are carried as context, not scored.
 - Soil is not inferred; demonstration coordinates are illustrative.
@@ -44,6 +46,13 @@ Run backend checks:
 ```powershell
 cd backend
 python -m unittest discover -s tests -v
+```
+
+Run frontend utility tests (Node.js built-in test runner):
+
+```powershell
+cd frontend
+npm test
 ```
 
 The farmer-feedback tool works in browser-local mode by default. To enable optional Supabase account sync, create `frontend/.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from your own project, apply `database/schema.sql`, restart Next.js, and use the sign-in controls on `/tools`. The schema uses row-level security; never put a Supabase service-role key in the browser. Supabase is not connected to a live project yet. Public hosting and competition submission are not configured.

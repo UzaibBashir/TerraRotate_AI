@@ -4,9 +4,9 @@ The official Field Shift resources inventory is in `nasa_resource_allowlist.md`.
 
 ## API provenance
 
-NASA POWER output includes provider, API, parameter list, coordinates, requested period, URL and missing-value behavior. The daily water connector reports units and warns that source grids can differ. Climate analogue results carry the historical time range, input coordinates, source and monthly feature names. POWER's `-999` fill values become `null`.
+NASA POWER output includes provider, API, parameter list, coordinates, requested period, URL and missing-value behavior. Each daily/monthly point row also carries per-variable provenance (provider, product/API identifier, request source, retrieval timestamp, observation period/date, coordinates, unit, parameter-dependent resolution note, processing method and quality status). The daily water connector reports units and warns that source grids can differ. Climate analogue results carry the historical time range, input coordinates, source and monthly feature names. POWER's `-999` fill values become `null`.
 
-NASA GIBS output carries source provider, layer identifier, date, requested coordinates, request URL and a statement that the rendered image is visual context only. Image samples and API responses are not treated as numeric pixel measurements.
+NASA GIBS output carries source provider, layer identifier, date, requested coordinates, zoomed geographic bounds, request URL and a statement that the rendered image is visual context only. Where NASA advertises an official layer legend through WMS capabilities, the API proxies that legend image with source metadata. Image samples and API responses are not treated as numeric pixel measurements.
 
 ## User-supplied analytical inputs
 
@@ -18,4 +18,4 @@ Vegetation medians, anomalies, possible low-vegetation windows, water balance ar
 
 ## Demonstration data
 
-Default coordinates (33.7311, 75.1480) are illustrative and do not represent an enrolled farm or verified boundary. `data/resource_samples/download_manifest.json` records retrieval dates, request URLs and sample provenance. Files in the sample bundle are small demonstration excerpts, not complete datasets.
+Default coordinates (33.7311, 75.1480) are illustrative and do not represent an enrolled farm or verified boundary. Farmer-supplied field names, coordinates and GeoJSON boundaries are held in local browser storage; approximate polygon area is a derived display value and does not drive satellite extraction. `data/resource_samples/download_manifest.json` records retrieval dates, request URLs and sample provenance. Files in the sample bundle are small demonstration excerpts, not complete datasets.

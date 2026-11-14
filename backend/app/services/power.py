@@ -11,8 +11,13 @@ MONTHLY_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point"
 RESOURCE_URL = "https://power.larc.nasa.gov/"
 
 def _record_provenance(variable, value, unit, day, lat, lon, temporal, processing):
-    return {"provider":"NASA","resource_name":"NASA POWER","resource_url":RESOURCE_URL,
-            "product_identifier":"NASA POWER point API; native grid varies by parameter",
+    url=(PROJECTION_URL if temporal=="monthly model-scenario" else
+         MONTHLY_URL if temporal=="monthly climatology" else BASE_URL)
+    product=("NASA POWER Projection API / NEX-GDDP-CMIP6 ensemble" if temporal=="monthly model-scenario" else
+             "NASA POWER Monthly Point API" if temporal=="monthly climatology" else
+             "NASA POWER Daily Point API")
+    return {"provider":"NASA","resource_name":"NASA POWER","resource_url":url,
+            "product_identifier":product+"; native grid varies by parameter",
             "retrieved_at":datetime.now(timezone.utc).isoformat(),"observation_date":day,
             "latitude":lat,"longitude":lon,"spatial_resolution":"Parameter-dependent NASA POWER grid; nearest cell",
             "temporal_resolution":temporal,"variable":variable,"value":value,"unit":unit,
@@ -100,7 +105,7 @@ def fetch_power_water(lat: float, lon: float, start: date, end: date) -> dict:
                 "community":"AG (API-tested); parameter families are hydrology-related","parameters":list(HYDROLOGY_PARAMETERS),"coordinates":{"latitude":lat,"longitude":lon},
                 "period":{"start":start.isoformat(),"end":end.isoformat()},"rows":rows,
                 "resolution_note":"Hydrology parameters can use different native source grids; soil moisture and meteorology should not be assumed to share a pixel resolution.",
-                "units_note":"PRECTOT is mm/day; SFMC and RZMC are volumetric water content; EVPTRNS is an energy flux and is not converted here to water depth.",
+                "units_note":"PRECTOTCORR is mm/day; SFMC and RZMC are volumetric water content; daily EVPTRNS is MJ/m²/day and is not converted here to water depth.",
                 "url":response.url,"sample_mode":False}
     except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
         raise PowerError(f"NASA POWER hydrology data could not be retrieved or parsed: {exc}") from exc
