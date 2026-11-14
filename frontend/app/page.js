@@ -99,8 +99,8 @@ export default function Home() {
   const avg=temps.length?(temps.reduce((a,b)=>a+b,0)/temps.length).toFixed(1):"—";
   const precip=rain.length?rain.reduce((a,b)=>a+b,0).toFixed(1):"—";
   const scenarios=(projection?.scenarios||[]).map(name=>{
-    const t=(projection.rows||[]).filter(x=>x.scenario===name&&x.parameter==="T2M").map(x=>x.value);
-    const p=(projection.rows||[]).filter(x=>x.scenario===name&&x.parameter==="PRECTOTCORR").map(x=>x.value);
+    const t=(projection.rows||[]).filter(x=>x.scenario===name&&x.parameter==="T2M").map(x=>x.value).filter(Number.isFinite);
+    const p=(projection.rows||[]).filter(x=>x.scenario===name&&x.parameter==="PRECTOTCORR").map(x=>x.value).filter(Number.isFinite);
     return {name,temperature:t.length?(t.reduce((a,b)=>a+b,0)/t.length).toFixed(1):"—",precipitation:p.length?(p.reduce((a,b)=>a+b,0)/p.length).toFixed(2):"—"};
   });
 
@@ -142,7 +142,7 @@ export default function Home() {
         </article>
       </div>
       <div className="grid" style={{marginTop:20}}>
-      <article className="card"><h2>NASA future climate scenarios</h2><p className="sub">Compare NASA POWER multi-model ensemble monthly climate scenarios for 2041–2060 at this point. These are regional climate contexts, not farm forecasts.</p><button className="btn" disabled={projectionBusy} onClick={loadProjection}>{projectionBusy?"Loading scenarios…":"Compare scenarios"}</button>{projectionError&&<div className="error">{projectionError}</div>}{projection&&<><div className="banner">{projection.provider} · {projection.model} ensemble · {projection.period.start_year}–{projection.period.end_year}. Scenario differences are not crop-yield predictions.</div><div className="stats">{scenarios.map(s=><div className="stat" key={s.name}><b>{s.temperature}°C</b><span>{s.name.toUpperCase()} mean temperature · mean precipitation {s.precipitation} mm/day</span></div>)}</div></>}</article></div>
+      <article className="card"><h2>NASA future climate scenarios</h2><p className="sub">Compare NASA POWER multi-model ensemble monthly climate scenarios for 2041–2060 at this point. These are regional climate contexts, not farm forecasts.</p><button className="btn" disabled={projectionBusy} onClick={loadProjection}>{projectionBusy?"Loading scenarios…":"Compare scenarios"}</button>{projectionError&&<div className="error">{projectionError}</div>}{projection&&<><div className="banner">{projection.provider} · {projection.model} ensemble · {projection.period.start_year}–{projection.period.end_year}. Scenario differences are not crop-yield predictions. Available values: {projection.quality?.values_available??"unknown"}/{projection.quality?.expected_values??"unknown"}.</div>{projection.data_gaps?.map(gap=><div className="error" key={gap} role="status">{gap}</div>)}<div className="stats">{scenarios.map(s=><div className="stat" key={s.name}><b>{s.temperature}°C</b><span>{s.name.toUpperCase()} mean temperature · mean precipitation {s.precipitation} mm/day</span></div>)}</div></>}</article></div>
       <div className="grid" style={{marginTop:20}}><article className="card"><h2>What this view can tell you</h2><p className="sub">NASA POWER gridded meteorological estimates and NASA GIBS imagery provide regional context. Neither resolves exact conditions inside a small field.</p></article><article className="card"><h2>What to verify locally</h2><p className="sub">Soil test · water access · planting dates and local varieties · market constraints · pest and disease history. Soil is farmer-entered and not inferred.</p></article></div>
       <footer className="foot">Sources: NASA POWER for daily climate; NASA GIBS layers for MODIS/VIIRS, GPM IMERG and SMAP visual context. See <a href="/sources">all official challenge resources and data provenance</a>. TerraRotate AI is independent; NASA does not endorse it.</footer>
     </section>

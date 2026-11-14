@@ -77,6 +77,17 @@ class PowerTests(unittest.TestCase):
         result=fetch_power_projection(33.7,75.1,2041,2060)
         self.assertEqual(result["scenarios"],["ssp126","ssp245","ssp370"])
         self.assertEqual(len(result["rows"]),6)
+        self.assertEqual(result["quality"]["values_available"],6)
+
+    @patch("app.services.power.requests.get")
+    def test_projection_retains_missing_values_as_null(self,get):
+        response=Mock();response.url="https://power.larc.nasa.gov/api/projection/monthly/point";response.raise_for_status.return_value=None
+        response.json.return_value={"properties":{"parameter":{"T2M":{"ssp126":{"204001":-999},"ssp245":{"204001":-999},"ssp370":{"204001":-999}},"PRECTOTCORR":{"ssp126":{"204001":-999},"ssp245":{"204001":-999},"ssp370":{"204001":-999}}}}}
+        get.return_value=response
+        result=fetch_power_projection(33.123,75.234,2040,2040)
+        self.assertEqual(result["quality"],{"expected_values":6,"values_available":0,"missing_values":6})
+        self.assertTrue(all(row["value"] is None for row in result["rows"]))
+        self.assertTrue(result["data_gaps"])
 
     @patch("app.services.power.requests.get")
     def test_parses_hydrology_values_and_uses_ag_api_community(self,get):

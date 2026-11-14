@@ -9,6 +9,7 @@
 - Water deficit uses farmer-entered crop demand and irrigation/rainfall planning values. It is not a measured irrigation consumption or a complete soil-water model. NASA POWER `EVPTRNS` is energy flux, not converted to mm of ET.
 - Rotation rankings use a short provisional crop catalog, broad water classes and a legume practice proxy. No soil suitability ranges, local calendars, yields, markets, nutrient data or agronomist validation are available.
 - Historical climate analogues use NASA POWER monthly temperature and precipitation at user-supplied candidate locations. Similarity scales are explicit assumptions, and candidate locations determine the result. No global search or future prediction is performed.
+- NASA POWER Projection API responded at the illustrative Kashmir coordinate, but the tested 2041–2060 projection values were all missing sentinels. The UI shows missing coverage and does not fill or substitute those scenario values.
 - Zone clusters use user-supplied point measurements only; no parcel map, contiguous management zones or upscaled field surface is created.
 - Bayesian feedback is a simple binary Beta update. Browser-local storage is the default; optional feedback sync requires a configured Supabase project and authenticated user. Field and rotation history are not yet persisted through the UI.
 - RotationRisk reports sensitivity across four weighting presets; no confidence estimates, outcome probabilities, yield predictions or model accuracy are available.

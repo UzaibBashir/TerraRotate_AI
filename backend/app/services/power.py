@@ -1,5 +1,6 @@
 """NASA POWER daily point API adapter; no alternate satellite source is used."""
 from datetime import date, datetime, timezone
+import math
 import requests
 from .cache import ttl_cache
 
@@ -35,20 +36,25 @@ def fetch_power_projection(lat: float, lon: float, start_year: int, end_year: in
         response.raise_for_status()
         payload=response.json(); data=payload["properties"]["parameter"]
         scenarios=("ssp126","ssp245","ssp370")
-        rows=[]
+        rows=[]; expected=0; valid_count=0
         for parameter in PARAMETERS:
             for scenario in scenarios:
                 series=data[parameter].get(scenario,{})
                 if not isinstance(series,dict): continue
                 for ym,value in sorted(series.items()):
-                    if value is not None and float(value)>-900:
-                        parsed=float(value)
-                        rows.append({"month":ym,"scenario":scenario,"parameter":parameter,"value":parsed,
-                                     "provenance":_record_provenance(parameter,parsed,"°C" if parameter=="T2M" else "mm/day",ym,lat,lon,"monthly model-scenario","NASA POWER projection response; scenario preserved")})
+                    if len(ym)!=6 or ym[-2:] not in {f"{i:02}" for i in range(1,13)}: continue
+                    expected+=1
+                    try: parsed=float(value) if value is not None and math.isfinite(float(value)) and float(value)>-900 else None
+                    except (TypeError,ValueError): parsed=None
+                    valid_count+=parsed is not None
+                    rows.append({"month":ym,"scenario":scenario,"parameter":parameter,"value":parsed,
+                                 "provenance":_record_provenance(parameter,parsed,"°C" if parameter=="T2M" else "mm/day",ym,lat,lon,"monthly model-scenario","NASA POWER fill values ≤ -900 converted to null; scenario preserved")})
         return {"source":"NASA POWER Projection API","provider":"NASA Langley Research Center POWER Project",
                 "model":"ensemble","scenarios":list(scenarios),"parameters":list(PARAMETERS),
                 "coordinates":{"latitude":lat,"longitude":lon},"period":{"start_year":start_year,"end_year":end_year},
-                "rows":rows,"url":response.url,"sample_mode":False,
+                "rows":rows,"quality":{"expected_values":expected,"values_available":valid_count,"missing_values":expected-valid_count},
+                "data_gaps":["NASA POWER returned no usable projection values for this request; missing values are retained as null."] if expected and not valid_count else [],
+                "url":response.url,"retrieved_at":datetime.now(timezone.utc).isoformat(),"sample_mode":False,
                 "note":"Multi-model climate scenario context; not a field-scale forecast or a prediction of farm outcomes."}
     except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
         raise PowerError(f"NASA POWER projection data could not be retrieved or parsed: {exc}") from exc
