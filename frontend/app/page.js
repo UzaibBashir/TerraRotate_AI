@@ -22,6 +22,7 @@ export default function Home() {
   const [error,setError]=useState(""), [climateError,setClimateError]=useState("");
   const [layer,setLayer]=useState("modis_terra"), [imageDate,setImageDate]=useState(new Date(Date.now()-3*86400000).toISOString().slice(0,10)), [zoom,setZoom]=useState(1);
   const [imageUrl,setImageUrl]=useState(""), [imageError,setImageError]=useState("");
+  const [legendUrl,setLegendUrl]=useState(""), [legendError,setLegendError]=useState(false);
   const [projection,setProjection]=useState(null), [projectionError,setProjectionError]=useState(""), [projectionBusy,setProjectionBusy]=useState(false);
 
   useEffect(()=>{try{setSavedFields(JSON.parse(localStorage.getItem("terrarotate_fields")||"[]"));}catch{setSavedFields([]);}},[]);
@@ -76,6 +77,7 @@ export default function Home() {
   function loadImagery() {
     setImageError("");
     setImageUrl(`${API}/imagery?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&layer=${encodeURIComponent(layer)}&date=${encodeURIComponent(imageDate)}&zoom=${zoom}`);
+    setLegendError(false);setLegendUrl(`${API}/imagery/legend?layer=${encodeURIComponent(layer)}`);
   }
 
   async function loadProjection() {
@@ -110,10 +112,10 @@ export default function Home() {
           <div className="row"><div className="field"><label htmlFor="map-zoom">Map zoom · 1× to 4×</label><select id="map-zoom" value={zoom} onChange={e=>setZoom(Number(e.target.value))}><option value={1}>1× regional</option><option value={2}>2×</option><option value={3}>3×</option><option value={4}>4× local view</option></select></div><div className="field"><label>&nbsp;</label><button className="btn" onClick={loadImagery}>Load NASA imagery</button></div></div>
           {imageError&&<div className="error" role="alert">{imageError}</div>}
           <div className="map-frame" role="button" tabIndex={0} aria-label="NASA imagery map. Click or use arrow keys to choose a location." onClick={selectMapPoint} onKeyDown={moveMapPoint}>
-          {imageUrl?<img src={imageUrl} alt="NASA GIBS imagery for the selected location" onError={()=>setImageError("NASA GIBS has no image for this layer and date. Choose another date.")}/>:<div className="map-empty">Load NASA imagery below to enable point selection.</div>}
+          {imageUrl?<img src={imageUrl} alt="NASA GIBS imagery for the selected location" onError={()=>setImageError("NASA GIBS has no image for this layer and date. Choose another date.")}/>:<div className="map-empty">Load NASA imagery above to enable point selection.</div>}
           <svg className="map-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{boundary?.rings?.length>0&&<path d={boundary.rings.map(ring=>`M ${ring.map(point=>projectCoordinate(point,bounds)).join(" L ")} Z`).join(" ")} fill="#d6ef8344" fillRule="evenodd" stroke="#e9ffab" strokeWidth="0.45"/>}<circle cx={((centerLon-bounds.west)/(bounds.east-bounds.west)*100)} cy={((bounds.north-centerLat)/(bounds.north-bounds.south)*100)} r="1.35" fill="#f5cf4a" stroke="#17261f" strokeWidth=".5"/></svg>
           <span className="map-attribution">NASA GIBS · {bounds.south.toFixed(2)} to {bounds.north.toFixed(2)}° lat</span>
-        </div><p className="status">Selected point: {Number.isFinite(centerLat)?centerLat.toFixed(5):"—"}, {Number.isFinite(centerLon)?centerLon.toFixed(5):"—"} · illustrative until you register a real field.</p></div></div>
+        </div>{legendUrl&&<div className="map-legend"><b>NASA product legend</b>{!legendError?<img src={legendUrl} alt={`${layer} official NASA GIBS layer legend`} onError={()=>setLegendError(true)}/>:<span>GIBS did not return a separate legend for this layer. Color is product-specific; do not read it as a field measurement.</span>}</div>}<p className="status">Selected point: {Number.isFinite(centerLat)?centerLat.toFixed(5):"—"}, {Number.isFinite(centerLon)?centerLon.toFixed(5):"—"} · illustrative until you register a real field.</p></div></div>
         <div className="row"><button className="btn" onClick={saveField}>Save field on this device</button><button className="btn secondary print-button" onClick={()=>window.print()}>Print field report</button></div>{fieldMessage&&<div className="banner" role="status">{fieldMessage}</div>}
       </article>
       <section className="print-report" aria-label="Printable field report"><h2>TerraRotate AI · Field report</h2><p><b>{fieldName||"Unnamed field"}</b> · {fieldArea?`${fieldArea} hectares`:"area not supplied"} · {lat}, {lon}</p><p>NASA POWER period: {climate?.period?.start||"not analyzed"} to {climate?.period?.end||"not analyzed"}. Data status: {climate?`${climate.quality.days_with_any_value} days with values`:"no climate observations loaded"}.</p><p>Field boundary: {boundary?"farmer-supplied GeoJSON polygon; approximate area displayed":"not supplied"}. Rotation recommendations: {result?.recommendations?.map(r=>r.sequence.join(" → ")).join("; ")||"not generated"}.</p><p>Interpretation: decision-support summary only; verify inputs and recommendations with local agricultural expertise.</p></section>
