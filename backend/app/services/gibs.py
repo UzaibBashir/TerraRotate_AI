@@ -1,6 +1,7 @@
 """NASA GIBS WMS image retrieval for listed NASA Earth-observation layers."""
 from datetime import date
 import requests
+from .cache import ttl_cache
 
 BASE_URL = "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi"
 LAYERS = {
@@ -14,6 +15,7 @@ LAYERS = {
 
 class GIBSError(RuntimeError): pass
 
+@ttl_cache(seconds=21600, max_entries=32)
 def fetch_gibs_image(lat: float, lon: float, day: date, layer_key: str) -> tuple[bytes, dict]:
     if layer_key not in LAYERS:
         raise ValueError("Choose a supported NASA GIBS MODIS, VIIRS, GPM IMERG, or SMAP layer")

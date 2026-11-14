@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 const CROPS = [["potato","Potato"],["rice","Rice"],["maize","Maize"],["wheat","Wheat"],["mustard","Mustard"],["pea","Field pea"]];
@@ -12,6 +12,9 @@ async function readJson(response, fallback) {
 
 export default function Home() {
   const [lat,setLat]=useState("33.7311"), [lon,setLon]=useState("75.1480");
+  const [fieldName,setFieldName]=useState("Kashmir demonstration point"), [fieldArea,setFieldArea]=useState("");
+  const [boundaryText,setBoundaryText]=useState(""), [boundary,setBoundary]=useState(null), [boundaryError,setBoundaryError]=useState("");
+  const [savedFields,setSavedFields]=useState([]), [fieldMessage,setFieldMessage]=useState("");
   const [crop,setCrop]=useState("potato"), [water,setWater]=useState("moderate"), [priority,setPriority]=useState("balanced");
   const [soilTexture,setSoilTexture]=useState(""), [soilPh,setSoilPh]=useState(""), [organicMatter,setOrganicMatter]=useState("");
   const [climate,setClimate]=useState(null), [result,setResult]=useState(null), [busy,setBusy]=useState(false);
@@ -19,6 +22,53 @@ export default function Home() {
   const [layer,setLayer]=useState("modis_terra"), [imageDate,setImageDate]=useState(new Date(Date.now()-3*86400000).toISOString().slice(0,10));
   const [imageUrl,setImageUrl]=useState(""), [imageError,setImageError]=useState("");
   const [projection,setProjection]=useState(null), [projectionError,setProjectionError]=useState(""), [projectionBusy,setProjectionBusy]=useState(false);
+
+  useEffect(()=>{try{setSavedFields(JSON.parse(localStorage.getItem("terrarotate_fields")||"[]"));}catch{setSavedFields([]);}},[]);
+
+  const centerLat=Number(lat), centerLon=Number(lon);
+  const bounds={west:Math.max(-180,centerLon-.45),east:Math.min(180,centerLon+.45),south:Math.max(-90,centerLat-.30),north:Math.min(90,centerLat+.30)};
+  const mapPoint=(coordinate)=>`${((coordinate[0]-bounds.west)/(bounds.east-bounds.west)*100).toFixed(2)},${((bounds.north-coordinate[1])/(bounds.north-bounds.south)*100).toFixed(2)}`;
+
+  function selectMapPoint(event){
+    if(!imageUrl)return;
+    const box=event.currentTarget.getBoundingClientRect(), x=(event.clientX-box.left)/box.width, y=(event.clientY-box.top)/box.height;
+    const nextLon=bounds.west+x*(bounds.east-bounds.west), nextLat=bounds.north-y*(bounds.north-bounds.south);
+    setLat(nextLat.toFixed(5));setLon(nextLon.toFixed(5));setClimate(null);setResult(null);setProjection(null);
+    setImageUrl(`${API}/imagery?lat=${encodeURIComponent(nextLat)}&lon=${encodeURIComponent(nextLon)}&layer=${encodeURIComponent(layer)}&date=${encodeURIComponent(imageDate)}`);
+  }
+  function moveMapPoint(event){
+    const step=event.shiftKey ? .1 : .01;
+    if(!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.key))return;
+    event.preventDefault();const nextLat=Math.max(-90,Math.min(90,centerLat+(event.key==="ArrowUp"?step:event.key==="ArrowDown"?-step:0)));
+    const nextLon=Math.max(-180,Math.min(180,centerLon+(event.key==="ArrowRight"?step:event.key==="ArrowLeft"?-step:0)));
+    setLat(nextLat.toFixed(5));setLon(nextLon.toFixed(5));setClimate(null);setResult(null);
+    setImageUrl(`${API}/imagery?lat=${encodeURIComponent(nextLat)}&lon=${encodeURIComponent(nextLon)}&layer=${encodeURIComponent(layer)}&date=${encodeURIComponent(imageDate)}`);
+  }
+
+  function parseBoundary(){
+    setBoundaryError("");
+    try{
+      const parsed=JSON.parse(boundaryText), geometry=parsed.type==="Feature"?parsed.geometry:parsed;
+      if(geometry?.type!=="Polygon"||!Array.isArray(geometry.coordinates)||!geometry.coordinates.length)throw new Error("Paste a GeoJSON Polygon or Feature containing a Polygon.");
+      const rings=geometry.coordinates;
+      if(rings.some(ring=>!Array.isArray(ring)||ring.length<4||ring.length>501||ring.some(p=>!Array.isArray(p)||p.length<2||!Number.isFinite(Number(p[0]))||!Number.isFinite(Number(p[1]))||Math.abs(Number(p[0]))>180||Math.abs(Number(p[1]))>90)))throw new Error("Every polygon ring needs at least 4 valid [longitude, latitude] positions, within coordinate limits.");
+      const coords=rings[0].map(p=>[Number(p[0]),Number(p[1])]);
+      if(coords[0][0]!==coords.at(-1)[0]||coords[0][1]!==coords.at(-1)[1])throw new Error("Close the polygon ring by repeating its first coordinate at the end.");
+      const earthRadius=6371008.8;
+      const ringArea=ring=>Math.abs(ring.slice(0,-1).reduce((sum,p,i)=>{const q=ring[i+1];return sum+(q[0]-p[0])*Math.PI/180*(2+Math.sin(p[1]*Math.PI/180)+Math.sin(q[1]*Math.PI/180));},0)*earthRadius*earthRadius/2);
+      const area=Math.max(0,(ringArea(rings[0])-rings.slice(1).reduce((sum,ring)=>sum+ringArea(ring),0))/10000);
+      setBoundary({rings,area});setFieldArea(area.toFixed(3));setFieldMessage("Boundary loaded. Area is an approximate geodesic calculation from your supplied polygon.");
+    }catch(e){setBoundary(null);setBoundaryError(e.message||"Boundary GeoJSON is invalid.");}
+  }
+
+  function saveField(){
+    const latitude=Number(lat),longitude=Number(lon),area=fieldArea===""?null:Number(fieldArea);
+    if(!fieldName.trim()||!Number.isFinite(latitude)||latitude < -90||latitude>90||!Number.isFinite(longitude)||longitude < -180||longitude>180||(area!==null&&(!Number.isFinite(area)||area<=0))){setFieldMessage("Enter a field name, valid coordinates, and a positive area if provided.");return;}
+    const field={id:crypto.randomUUID(),name:fieldName.trim(),latitude,longitude,area_hectares:area,boundary_geojson:boundary?{type:"Polygon",coordinates:boundary.rings}:null,saved_at:new Date().toISOString()};
+    const next=[field,...savedFields.filter(item=>item.name!==field.name)].slice(0,20);setSavedFields(next);localStorage.setItem("terrarotate_fields",JSON.stringify(next));setFieldMessage("Field saved on this device only. It has not been uploaded to a server.");
+  }
+
+  function loadSavedField(id){const field=savedFields.find(item=>item.id===id);if(!field)return;setFieldName(field.name);setLat(String(field.latitude));setLon(String(field.longitude));setFieldArea(field.area_hectares==null?"":String(field.area_hectares));if(field.boundary_geojson){setBoundary({rings:field.boundary_geojson.coordinates,area:field.area_hectares||0});setBoundaryText(JSON.stringify(field.boundary_geojson,null,2));}else setBoundary(null);setClimate(null);setResult(null);}
 
   async function analyze() {
     setBusy(true); setError(""); setClimateError(""); setClimate(null); setResult(null);
@@ -60,6 +110,17 @@ export default function Home() {
     <header className="topbar"><a className="brand" href="/">◒ TERRAROTATE <span style={{fontWeight:400}}>AI</span></a><nav className="nav"><span>Field overview</span><a href="/tools">Analysis tools</a><a href="/sources">Data sources</a></nav><div style={{fontSize:12,color:"#66756e"}}>GLOBAL DEMO · KASHMIR EXAMPLE</div></header>
     <section className="hero"><div><div className="eyebrow">FIELD SHIFT · FARM ADAPTATION</div><h1>Plan the next season<br/>with the evidence in view.</h1><p>Explore NASA climate and Earth imagery alongside field details and farmer priorities. Every comparison shows its reasoning and information gaps.</p></div><div className="hero-badge">Decision support · farmer-led</div></section>
     <section className="content">
+      <article className="card field-card">
+        <div className="row field-head"><div><h2>Field registration · local demo</h2><p className="sub">Choose a point on NASA imagery, enter your field details, or load a field saved in this browser. These records are not sent to a server.</p></div><div className="field saved-field"><label htmlFor="saved-field">Saved on this device</label><select id="saved-field" value="" onChange={e=>loadSavedField(e.target.value)}><option value="">Choose a saved field</option>{savedFields.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div>
+        <div className="row"><div className="field"><label htmlFor="field-name">Field name</label><input id="field-name" value={fieldName} onChange={e=>setFieldName(e.target.value)} maxLength={120}/></div><div className="field"><label htmlFor="field-area">Field area (hectares)</label><input id="field-area" type="number" min="0.001" step="any" value={fieldArea} onChange={e=>setFieldArea(e.target.value)} placeholder="Optional; or calculate from boundary"/></div></div>
+        <div className="row"><div className="field"><label htmlFor="boundary-geojson">Field boundary (optional GeoJSON Polygon)</label><textarea id="boundary-geojson" className="json-input boundary-input" value={boundaryText} onChange={e=>setBoundaryText(e.target.value)} placeholder='{"type":"Polygon","coordinates":[[[75.10,33.70],[75.12,33.70],[75.12,33.72],[75.10,33.72],[75.10,33.70]]]}' spellCheck="false"/><button className="btn secondary" onClick={parseBoundary}>Validate boundary and estimate area</button>{boundaryError&&<div className="error" role="alert">{boundaryError}</div>}</div><div className="field map-field"><label>Interactive NASA map · select point</label><p className="sub">Click the map to update the selected latitude and longitude. A supplied boundary is overlaid when it falls inside this view. Keyboard: arrow keys move the point; Shift moves in larger steps.</p><div className="map-frame" role="button" tabIndex={0} aria-label="NASA imagery map. Click or use arrow keys to choose a location." onClick={selectMapPoint} onKeyDown={moveMapPoint}>
+          {imageUrl?<img src={imageUrl} alt="NASA GIBS imagery for the selected location" onError={()=>setImageError("NASA GIBS has no image for this layer and date. Choose another date.")}/>:<div className="map-empty">Load NASA imagery below to enable point selection.</div>}
+          <svg className="map-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{boundary?.rings?.map((ring,index)=><polygon key={index} points={ring.map(mapPoint).join(" ")} fill={index===0?"#d6ef8344":"#ffffff22"} stroke="#e9ffab" strokeWidth="0.45"/>)}<circle cx={((centerLon-bounds.west)/(bounds.east-bounds.west)*100)} cy={((bounds.north-centerLat)/(bounds.north-bounds.south)*100)} r="1.35" fill="#f5cf4a" stroke="#17261f" strokeWidth=".5"/></svg>
+          <span className="map-attribution">NASA GIBS · {bounds.south.toFixed(2)} to {bounds.north.toFixed(2)}° lat</span>
+        </div><p className="status">Selected point: {Number.isFinite(centerLat)?centerLat.toFixed(5):"—"}, {Number.isFinite(centerLon)?centerLon.toFixed(5):"—"} · illustrative until you register a real field.</p></div></div>
+        <div className="row"><button className="btn" onClick={saveField}>Save field on this device</button><button className="btn secondary print-button" onClick={()=>window.print()}>Print field report</button></div>{fieldMessage&&<div className="banner" role="status">{fieldMessage}</div>}
+      </article>
+      <section className="print-report" aria-label="Printable field report"><h2>TerraRotate AI · Field report</h2><p><b>{fieldName||"Unnamed field"}</b> · {fieldArea?`${fieldArea} hectares`:"area not supplied"} · {lat}, {lon}</p><p>NASA POWER period: {climate?.period?.start||"not analyzed"} to {climate?.period?.end||"not analyzed"}. Data status: {climate?`${climate.quality.days_with_any_value} days with values`:"no climate observations loaded"}.</p><p>Field boundary: {boundary?"farmer-supplied GeoJSON polygon; approximate area displayed":"not supplied"}. Rotation recommendations: {result?.recommendations?.map(r=>r.sequence.join(" → ")).join("; ")||"not generated"}.</p><p>Interpretation: decision-support summary only; verify inputs and recommendations with local agricultural expertise.</p></section>
       <div className="grid">
         <article className="card">
           <h2>Field conditions</h2><p className="sub">Enter a point anywhere in the world. Demonstration coordinates are illustrative and do not represent a verified farm.</p>

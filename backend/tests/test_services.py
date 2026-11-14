@@ -6,6 +6,21 @@ from app.services.power import fetch_power_daily, fetch_power_projection, fetch_
 from app.services.gibs import fetch_gibs_image
 from app.services.rotation import recommend_rotations, CROPS
 from app.services.intelligence import vegetation, bare_windows, water_budget, climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
+from app.services.cache import ttl_cache
+
+class CacheTests(unittest.TestCase):
+    def test_ttl_cache_reuses_success_and_does_not_cache_failures(self):
+        calls=[]
+        @ttl_cache(seconds=60,max_entries=2)
+        def lookup(key):
+            calls.append(key)
+            if key=="bad": raise RuntimeError("upstream error")
+            return {"key":key}
+        self.assertEqual(lookup("a"),lookup("a"))
+        self.assertEqual(calls,["a"])
+        for _ in range(2):
+            with self.assertRaises(RuntimeError): lookup("bad")
+        self.assertEqual(calls,["a","bad","bad"])
 
 class RotationTests(unittest.TestCase):
     def test_returns_baseline_and_two_alternatives(self):

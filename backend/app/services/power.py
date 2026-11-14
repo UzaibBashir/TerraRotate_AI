@@ -1,6 +1,7 @@
 """NASA POWER daily point API adapter; no alternate satellite source is used."""
 from datetime import date
 import requests
+from .cache import ttl_cache
 
 BASE_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
 PARAMETERS = ("T2M", "PRECTOTCORR")
@@ -10,6 +11,7 @@ MONTHLY_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point"
 
 class PowerError(RuntimeError): pass
 
+@ttl_cache(seconds=86400, max_entries=256)
 def fetch_power_projection(lat: float, lon: float, start_year: int, end_year: int) -> dict:
     params={"parameters":",".join(PARAMETERS),"community":"AG","longitude":f"{lon:.5f}",
             "latitude":f"{lat:.5f}","start":f"{start_year}01","end":f"{end_year}12",
@@ -35,6 +37,7 @@ def fetch_power_projection(lat: float, lon: float, start_year: int, end_year: in
     except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
         raise PowerError(f"NASA POWER projection data could not be retrieved or parsed: {exc}") from exc
 
+@ttl_cache(seconds=21600, max_entries=256)
 def fetch_power_daily(lat: float, lon: float, start: date, end: date) -> dict:
     params = {"parameters": ",".join(PARAMETERS), "community": "AG", "longitude": f"{lon:.5f}",
               "latitude": f"{lat:.5f}", "start": start.strftime("%Y%m%d"),
@@ -59,6 +62,7 @@ def fetch_power_daily(lat: float, lon: float, start: date, end: date) -> dict:
     except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
         raise PowerError(f"NASA POWER data could not be retrieved or parsed: {exc}") from exc
 
+@ttl_cache(seconds=21600, max_entries=256)
 def fetch_power_water(lat: float, lon: float, start: date, end: date) -> dict:
     """Fetch NASA POWER daily hydrology variables exposed through the AG endpoint."""
     params={"parameters":",".join(HYDROLOGY_PARAMETERS),"community":"AG","longitude":f"{lon:.5f}",
@@ -86,6 +90,7 @@ def fetch_power_water(lat: float, lon: float, start: date, end: date) -> dict:
     except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
         raise PowerError(f"NASA POWER hydrology data could not be retrieved or parsed: {exc}") from exc
 
+@ttl_cache(seconds=604800, max_entries=256)
 def fetch_power_monthly_profile(lat: float, lon: float, start_year: int, end_year: int) -> dict:
     """Fetch NASA POWER monthly historical T2M and precipitation for climate analogues."""
     params={"parameters":"T2M,PRECTOTCORR","community":"AG","longitude":f"{lon:.5f}","latitude":f"{lat:.5f}",
