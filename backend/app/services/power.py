@@ -93,7 +93,7 @@ def fetch_power_water(lat: float, lon: float, start: date, end: date) -> dict:
                 try: value=float(value) if value is not None and float(value)>-900 else None
                 except (ValueError,TypeError): value=None
                 row[param.lower()]=value
-            units={"PRECTOTCORR":"mm/day","SFMC":"m³/m³","RZMC":"m³/m³","EVPTRNS":"W/m²"}
+            units={"PRECTOTCORR":"mm/day","SFMC":"m³/m³","RZMC":"m³/m³","EVPTRNS":"MJ/m²/day"}
             row["provenance"]=[_record_provenance(param,row[param.lower()],units[param],day,lat,lon,"daily","NASA POWER fill values ≤ -900 converted to null; no unit conversion") for param in HYDROLOGY_PARAMETERS]
             rows.append(row)
         return {"source":"NASA POWER Daily hydrology parameters","provider":"NASA Langley Research Center POWER Project",
