@@ -7,7 +7,8 @@ Explainable, farmer-led exploration of climate-aware crop-rotation options for N
 - Next.js dashboard for coordinates, crop, water availability, and farmer priority.
 - Flask API queries NASA POWER daily point data (`T2M`, `PRECTOTCORR`) with provenance and missingness.
 - Transparent baseline rotation comparison with explanations and limitations.
-- Soil is not inferred; the demonstration coordinates are illustrative.
+- Optional farmer-entered soil texture, pH and organic matter are carried as context, not scored.
+- Soil is not inferred; demonstration coordinates are illustrative.
 
 ## Run locally
 

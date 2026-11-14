@@ -38,4 +38,19 @@ def recommend_rotations(body):
         title="Current crop continued" if len(set(seq))==1 else "Alternative rotation"
         result.append({"title":title,"sequence":seq,"score":score,"components":{"water_fit":round(wfit,2),"family_diversity":round(diversity,2),"nitrogen_fixing_crop_count":legumes,"soil_proxy":round(soil,2)},"explanation":f"Includes {legumes} legume crop(s) and {len({c['family'] for c in crops})} crop families; water fit uses broad catalog classes.","caveats":["Normalized comparison aid, not probability, yield estimate or validated soil effect.","Check local cultivars, planting dates, soil test, market and rotation history with an agricultural expert."],"weights":weights})
     result.sort(key=lambda x:x["score"],reverse=True)
-    return {"recommendations":result,"method":"Transparent weighted rule baseline","current_crop":current,"water_availability":water,"priority":priority,"data_gaps":["No farmer-entered soil test supplied","No field-level yield or pest data"],"source":"docs/crop_catalog.md"}
+    soil=body.get("soil") or {}
+    if not isinstance(soil,dict): raise ValueError("soil must be an object of farmer-entered values")
+    soil_inputs={key:soil.get(key) for key in ("texture","ph","organic_matter_percent") if soil.get(key) not in (None,"")}
+    if "texture" in soil_inputs and soil_inputs["texture"] not in {"Sand","Sandy loam","Loam","Clay loam","Clay"}:
+        raise ValueError("soil.texture must be one of the listed texture classes")
+    for key, high in (("ph",14),("organic_matter_percent",100)):
+        if key in soil_inputs:
+            try: value=float(soil_inputs[key])
+            except (TypeError,ValueError): raise ValueError(f"soil.{key} must be numeric")
+            if not 0 <= value <= high: raise ValueError(f"soil.{key} must be between 0 and {high}")
+            soil_inputs[key]=value
+    gaps=[]
+    if not soil_inputs: gaps.append("No farmer-entered soil details supplied")
+    else: gaps.append("Farmer-entered soil details are shown as context but not used in scoring because locally verified crop suitability ranges are incomplete")
+    gaps.append("No field-level yield or pest data")
+    return {"recommendations":result,"method":"Transparent weighted rule baseline","current_crop":current,"water_availability":water,"priority":priority,"soil_inputs":soil_inputs,"data_gaps":gaps,"source":"docs/crop_catalog.md"}

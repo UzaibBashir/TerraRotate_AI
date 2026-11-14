@@ -19,6 +19,14 @@ class RotationTests(unittest.TestCase):
         result = recommend_rotations({})
         self.assertTrue(all("probability" in r["caveats"][0] for r in result["recommendations"]))
 
+    def test_soil_values_are_preserved_but_not_scored(self):
+        result = recommend_rotations({"soil":{"texture":"Loam","ph":"6.5"}})
+        self.assertEqual(result["soil_inputs"], {"texture":"Loam","ph":6.5})
+        self.assertIn("not used in scoring", result["data_gaps"][0])
+
+    def test_rejects_out_of_range_ph(self):
+        with self.assertRaises(ValueError): recommend_rotations({"soil":{"ph":15}})
+
 class PowerTests(unittest.TestCase):
     @patch("app.services.power.requests.get")
     def test_parses_values_and_missing_sentinel(self, get):
@@ -35,6 +43,7 @@ class ApiTests(unittest.TestCase):
     def setUp(self): self.client = create_app().test_client()
     def test_health(self): self.assertEqual(self.client.get("/health").json["status"],"ok")
     def test_rejects_invalid_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=91&lon=0").status_code,400)
+    def test_rejects_nonfinite_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=NaN&lon=0").status_code,400)
     def test_rotation_endpoint(self): self.assertEqual(self.client.post("/api/rotations",json={"current_crop":"rice"}).status_code,200)
 
 if __name__ == "__main__": unittest.main()

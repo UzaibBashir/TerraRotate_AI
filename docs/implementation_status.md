@@ -10,7 +10,8 @@
 | Rotation baseline | Tested | Input validation, baseline plus two alternatives, explanations and caveats |
 | Next.js dashboard | Implemented | Location, crop, water and priority inputs; package install blocked by unavailable registry/cache, so build not verified |
 | Crop catalog | In progress | Broad starter classes; local expert validation needed |
-| Supabase / persistence | Not started | No credentials or schema supplied |
+| Supabase schema | Implemented | Owner-scoped tables and RLS in `database/schema.sql`; not applied to a Supabase project |
+| Supabase runtime integration | Not started | No project URL/keys supplied; no persistence claim |
 | Eight advanced modules | Not started | To follow validated sources and methods; no decorative placeholders |
 | Backend automated tests | Tested | `python -m unittest discover -s tests -v`: 7 tests passed |
 | Frontend build / live integration | Blocked | npm registry is inaccessible in this environment and packages are not cached; NASA endpoint also could not be reached by verification tools |

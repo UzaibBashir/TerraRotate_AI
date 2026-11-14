@@ -4,4 +4,4 @@
 
 Current flow: farmer-selected coordinates and priorities → Flask `/api/climate` queries NASA POWER and returns provenance/quality metadata; Flask `/api/rotations` validates inputs and ranks three rule-based sequences; frontend presents observations, explanations, and data limits.
 
-Supabase persistence/authentication, field boundary mapping, user history, and advanced modules are not yet implemented.
+Supabase persistence/authentication and field boundary mapping are not wired into the running services yet. `database/schema.sql` prepares owner-scoped tables and row-level security for later integration. The public demo remains ephemeral and does not write private farmer data.

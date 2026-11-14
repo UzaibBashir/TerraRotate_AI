@@ -8,4 +8,6 @@ The API requests daily NASA POWER `T2M` and `PRECTOTCORR` point values for a rec
 
 Three candidate sequences include the selected current crop. A normalized weighted comparison uses broad crop water classes, family diversity, a legume-count soil proxy, and farmer priority. Default weights: water 0.35, diversity 0.25, soil proxy 0.20, preference 0.20. Priority options adjust weights as returned by the API. This rule baseline is not validated. Local crop-calendar feasibility and crop-family breaks need regional agronomic review.
 
+Farmers may also enter texture, pH and organic matter. The API preserves these as user-provided context, but does not use them in ranking until locally appropriate crop suitability ranges have been verified.
+
 No machine-learning model is trained because no suitable labeled field outcome data is available.
