@@ -6,6 +6,7 @@ Explainable, farmer-led exploration of climate-aware crop-rotation options for N
 
 - Next.js dashboard for coordinates, crop, water availability, and farmer priority.
 - Flask API queries NASA POWER daily point data (`T2M`, `PRECTOTCORR`) with provenance and missingness.
+- NASA POWER multi-model climate scenarios and NASA GIBS MODIS/VIIRS browse imagery are available as separate evidence views.
 - Transparent baseline rotation comparison with explanations and limitations.
 - Optional farmer-entered soil texture, pH and organic matter are carried as context, not scored.
 - Soil is not inferred; demonstration coordinates are illustrative.
@@ -30,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Climate retrieval needs network access to NASA POWER. The rotation API works independently, but the dashboard reports climate retrieval errors clearly.
+Open `http://localhost:3000`. NASA POWER and GIBS requests need network access; those panels report errors rather than substitute sample satellite observations.
 
 ## Documentation
 

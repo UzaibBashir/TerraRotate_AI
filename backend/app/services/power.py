@@ -4,13 +4,39 @@ import requests
 
 BASE_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
 PARAMETERS = ("T2M", "PRECTOTCORR")
+PROJECTION_URL = "https://power.larc.nasa.gov/api/projection/monthly/point"
 
 class PowerError(RuntimeError): pass
+
+def fetch_power_projection(lat: float, lon: float, start_year: int, end_year: int) -> dict:
+    params={"parameters":",".join(PARAMETERS),"community":"AG","longitude":f"{lon:.5f}",
+            "latitude":f"{lat:.5f}","start":f"{start_year}01","end":f"{end_year}12",
+            "format":"JSON","time-standard":"UTC","model":"ensemble"}
+    try:
+        response=requests.get(PROJECTION_URL,params=params,timeout=35)
+        response.raise_for_status()
+        payload=response.json(); data=payload["properties"]["parameter"]
+        scenarios=("ssp126","ssp245","ssp370")
+        rows=[]
+        for parameter in PARAMETERS:
+            for scenario in scenarios:
+                series=data[parameter].get(scenario,{})
+                if not isinstance(series,dict): continue
+                for ym,value in sorted(series.items()):
+                    if value is not None and float(value)>-900:
+                        rows.append({"month":ym,"scenario":scenario,"parameter":parameter,"value":float(value)})
+        return {"source":"NASA POWER Projection API","provider":"NASA Langley Research Center POWER Project",
+                "model":"ensemble","scenarios":list(scenarios),"parameters":list(PARAMETERS),
+                "coordinates":{"latitude":lat,"longitude":lon},"period":{"start_year":start_year,"end_year":end_year},
+                "rows":rows,"url":response.url,"sample_mode":False,
+                "note":"Multi-model climate scenario context; not a field-scale forecast or a prediction of farm outcomes."}
+    except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
+        raise PowerError(f"NASA POWER projection data could not be retrieved or parsed: {exc}") from exc
 
 def fetch_power_daily(lat: float, lon: float, start: date, end: date) -> dict:
     params = {"parameters": ",".join(PARAMETERS), "community": "AG", "longitude": f"{lon:.5f}",
               "latitude": f"{lat:.5f}", "start": start.strftime("%Y%m%d"),
-              "end": end.strftime("%Y%m%d"), "format": "JSON"}
+              "end": end.strftime("%Y%m%d"), "format": "JSON", "time-standard":"UTC"}
     try:
         response = requests.get(BASE_URL, params=params, timeout=20)
         response.raise_for_status()
