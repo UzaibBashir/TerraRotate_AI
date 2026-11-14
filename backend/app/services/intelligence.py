@@ -57,7 +57,8 @@ def vegetation(body):
 
 def bare_windows(body):
     rows, source, resolution = _observations(body)
-    threshold = float(body.get("low_threshold", 0.2))
+    try: threshold = float(body.get("low_threshold", 0.2))
+    except (TypeError,ValueError): raise ValueError("low_threshold must be between 0 and 1")
     if not 0 <= threshold <= 1: raise ValueError("low_threshold must be between 0 and 1")
     low = [r for r in rows if r["value"] < threshold]
     windows=[]
@@ -187,14 +188,15 @@ def spatial_zones(body):
 def bayesian_feedback(body):
     helpful=body.get("helpful")
     if not isinstance(helpful,bool): raise ValueError("helpful must be true or false and represent farmer feedback")
-    alpha=float(body.get("prior_alpha",2)); beta=float(body.get("prior_beta",2))
+    try: alpha=float(body.get("prior_alpha",2)); beta=float(body.get("prior_beta",2))
+    except (TypeError,ValueError): raise ValueError("Beta prior parameters must be finite and positive")
     previous=body.get("previous_feedback",{"helpful":0,"not_helpful":0})
     if not math.isfinite(alpha) or not math.isfinite(beta) or alpha<=0 or beta<=0 or not isinstance(previous,dict): raise ValueError("Beta prior parameters must be finite and positive")
     try: a=alpha+int(previous.get("helpful",0))+int(helpful); b=beta+int(previous.get("not_helpful",0))+int(not helpful)
     except (TypeError,ValueError): raise ValueError("previous_feedback counts must be non-negative integers")
     try: h=int(previous.get("helpful",0)); n=int(previous.get("not_helpful",0))
     except (TypeError,ValueError): raise ValueError("previous_feedback counts must be non-negative integers")
-    if h<0 or n<0 or h!=previous.get("helpful",0) or n!=previous.get("not_helpful",0): raise ValueError("previous_feedback counts must be non-negative integers")
+    if any(isinstance(previous.get(key,0),bool) for key in ("helpful","not_helpful")) or h<0 or n<0 or h!=previous.get("helpful",0) or n!=previous.get("not_helpful",0): raise ValueError("previous_feedback counts must be non-negative integers")
     return {"module":"farmer_memory_bayesian_feedback","prior":{"alpha":alpha,"beta":beta,"mean":alpha/(alpha+beta)},
             "posterior":{"alpha":a,"beta":b,"mean":a/(a+b),"credible_interval_95":None},
             "feedback_count":int(previous.get("helpful",0))+int(previous.get("not_helpful",0))+1,

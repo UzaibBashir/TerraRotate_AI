@@ -114,6 +114,10 @@ class IntelligenceTests(unittest.TestCase):
         data=bare_windows({"source":"NASA MODIS MOD13Q1 v061","resolution":"250m","observations":[{"date":"2026-01-01","value":0.1}]})
         self.assertIn("not verified fallow",data["windows"][0]["label"])
 
+    def test_bare_windows_rejects_invalid_threshold(self):
+        body={"source":"NASA MODIS MOD13Q1 v061","resolution":"250m","observations":[{"date":"2026-01-01","value":.3}],"low_threshold":None}
+        with self.assertRaises(ValueError): bare_windows(body)
+
     def test_water_budget_uses_manual_scenarios_and_area_conversion(self):
         data=water_budget({"area_hectares":2,"crop_demand_mm":100,"irrigation_mm":20,"expected_rainfall_mm":{"dry":30,"normal":80,"wet":120}})
         self.assertEqual(data["scenarios"]["dry"]["deficit_volume_m3"],1000)
@@ -132,6 +136,9 @@ class IntelligenceTests(unittest.TestCase):
         data=bayesian_feedback({"helpful":True,"previous_feedback":{"helpful":1,"not_helpful":0}})
         self.assertEqual(data["posterior"]["alpha"],4)
         self.assertIn("Subjective",data["observation"])
+
+    def test_bayesian_feedback_rejects_nonfinite_prior(self):
+        with self.assertRaises(ValueError): bayesian_feedback({"helpful":True,"prior_alpha":float("nan")})
 
 class GIBSTests(unittest.TestCase):
     @patch("app.services.gibs.requests.get")
@@ -196,6 +203,8 @@ class ApiTests(unittest.TestCase):
     def test_analysis_routes_require_valid_inputs(self):
         self.assertEqual(self.client.post("/api/intelligence/vegetation",json={}).status_code,400)
         self.assertEqual(self.client.post("/api/intelligence/climate-analogs",json={}).status_code,400)
+        bad={"field":{"latitude":33,"longitude":75},"candidates":[None]}
+        self.assertEqual(self.client.post("/api/intelligence/climate-analogs",json=bad).status_code,400)
     def test_rotation_risk_endpoint_does_not_invent_confidence(self):
         data=self.client.post("/api/intelligence/rotation-risk",json={}).json
         self.assertIn("Insufficient evidence",data["confidence"])

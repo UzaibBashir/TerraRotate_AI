@@ -153,12 +153,16 @@ def climate_analog_analysis():
         body=_analysis_body(); field=body.get("field"); candidates=body.get("candidates")
         if not isinstance(field,dict) or not isinstance(candidates,list) or not candidates or len(candidates)>5:
             raise ValueError("Provide a field coordinate and between one and five candidate coordinates")
+        if any(not isinstance(candidate,dict) for candidate in candidates):
+            raise ValueError("Each candidate must be an object with a name and coordinates")
         start=int(body.get("start_year",1991)); end=int(body.get("end_year",2020)); latest=date.today().year-1
         if start<1981 or end>latest or end<start or end-start>39: raise ValueError(f"Choose a historical period between 1981 and {latest}, no longer than 40 years")
         sites=[{"name":"Field","latitude":float(field["latitude"]),"longitude":float(field["longitude"])}]
         for candidate in candidates:
-            sites.append({"name":str(candidate.get("name","Candidate")),"latitude":float(candidate["latitude"]),"longitude":float(candidate["longitude"])})
-        if any(not (-90<=s["latitude"]<=90 and -180<=s["longitude"]<=180) for s in sites): raise ValueError("Coordinates are outside valid ranges")
+            name=str(candidate.get("name","Candidate")).strip()
+            if not name or len(name)>120: raise ValueError("Candidate names must contain 1 to 120 characters")
+            sites.append({"name":name,"latitude":float(candidate["latitude"]),"longitude":float(candidate["longitude"])})
+        if any(not (math.isfinite(s["latitude"]) and math.isfinite(s["longitude"]) and -90<=s["latitude"]<=90 and -180<=s["longitude"]<=180) for s in sites): raise ValueError("Coordinates must be finite and within valid ranges")
         with ThreadPoolExecutor(max_workers=3) as pool:
             futures=[pool.submit(fetch_power_monthly_profile,s["latitude"],s["longitude"],start,end) for s in sites]
             profiles=[future.result() for future in futures]
