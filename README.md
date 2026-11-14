@@ -10,7 +10,7 @@ Explainable, farmer-led exploration of climate-aware crop-rotation options for N
 - NASA POWER supplies the numeric daily temperature and precipitation context; its multi-model climate-scenario view is separate.
 - Small, dated global NASA POWER and GIBS samples are saved in `data/resource_samples/`; the manifest distinguishes sample assets from full archives that require product selection or authenticated access.
 - [Download the sample bundle](data/terrarotate_global_resource_samples.zip) or inspect the [download manifest](data/resource_samples/download_manifest.json) and [24-resource download status](data/resource_samples/resource_download_status.csv).
-- [Seven-slide challenge demo deck draft](demo/presentation/TerraRotate_AI_challenge_demo_v2.pptx). Replace the marked workflow panel with real app screenshots before competition submission.
+- [Seven-slide challenge demo deck draft](demo/presentation/TerraRotate_AI_challenge_demo_v3.pptx). Replace the marked workflow panel with real app screenshots before competition submission.
 - Transparent baseline rotation comparison with explanations and limitations.
 - Seven additional input-driven analysis tools at `/tools`: vegetation patterns, water-budget scenarios, possible low-vegetation windows, NASA POWER historical climate analogues, sample-point clustering, browser-local farmer feedback, and rotation ranking sensitivity.
 - Historical climate analogues use live NASA POWER monthly data at coordinates the user supplies. The request is limited to one field and five candidate points.

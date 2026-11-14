@@ -9,7 +9,7 @@ const RUNTIME_PYTHON = "C:/Users/uzbi6/.cache/codex-runtimes/codex-primary-runti
 process.env.RUNTIME_NODE_MODULES = "C:/Users/uzbi6/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules";
 const buildDir = path.join(workspaceDir, ".presentation_build");
 const outputDir = path.join(workspaceDir, "demo/presentation");
-const FINAL_PPTX = path.join(outputDir, "TerraRotate_AI_challenge_demo_v2.pptx");
+const FINAL_PPTX = path.join(outputDir, "TerraRotate_AI_challenge_demo_v3.pptx");
 const candidatePath = path.join(buildDir, "candidate.pptx");
 const W=1280,H=720;
 const C={paper:"#F4F7F1",ink:"#19352B",green:"#275B43",green2:"#548063",lime:"#D7EA91",white:"#FFFFFF",muted:"#66756E",line:"#DCE5DC",pale:"#EAF0E8",rust:"#AE604E"};
@@ -112,7 +112,7 @@ function pill(slide,label,x,y,w,color=C.pale,textColor=C.green){rect(slide,x,y,w
   const s=base("RotationRisk explains trade-offs, not certainty");
   const x0=72,y0=183;
   text(s,"Three ranked alternatives",x0,y0,500,32,22,C.ink,true);
-  ["Current crop continued","Alternative rotation","Alternative rotation"].forEach((label,i)=>{const y=238+i*90;rect(s,x0,y,500,68,C.white,12,C.line);pill(s,String.fromCharCode(65+i),x0+16,y+19,40,i===0?C.pale:"#EEF2E9",C.green);text(s,label,x0+78,y+16,390,38,17,C.ink,true);});
+  ["Current crop continued","Alternative rotation","Alternative rotation"].forEach((label,i)=>{const y=238+i*90;rect(s,x0,y,500,68,C.white,12,C.line);rect(s,x0+16,y+16,36,36,i===0?C.pale:"#EEF2E9",18);text(s,String.fromCharCode(65+i),x0+16,y+16,36,36,16,C.green,true,{align:"center"});text(s,label,x0+72,y+16,390,38,17,C.ink,true);});
   rect(s,652,183,556,330,C.green,18);text(s,"What changes the ranking?",680,212,490,33,22,C.white,true);
   const factors=[["Water availability",.35],["Crop diversity",.25],["Legume practice proxy",.20],["Farmer priority",.20]];
   factors.forEach((f,i)=>{const y=275+i*47;text(s,f[0],680,y,230,24,14,"#E2EBE4",false);rect(s,930,y+8,210,9,"#406A53",5);rect(s,930,y+8,210*f[1]/.35,9,C.lime,5);});
@@ -154,6 +154,6 @@ const result=await finalizePresentation({
   layoutArgs:["--expected-slide-size-emu","12192000,6858000","--validate-bullet-geometry","--validate-heading-fit"],
   fontPolicy:{basis:"design",families:["Arial"]},
   verifyArtifactToolImport:true,
-  receiptPath:path.join(buildDir,"TerraRotate_AI_challenge_demo_v2.validation.json"),
+  receiptPath:path.join(buildDir,"TerraRotate_AI_challenge_demo_v3.validation.json"),
 });
 console.log(JSON.stringify({finalPath:FINAL_PPTX,slides:presentation.slides.items.length,result},null,2));
