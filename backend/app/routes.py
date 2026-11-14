@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from flask import Blueprint, jsonify, request, Response, send_from_directory, abort
 from .services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, fetch_power_monthly_profile, PowerError
-from .services.gibs import fetch_gibs_image, GIBSError
+from .services.gibs import fetch_gibs_image, fetch_gibs_legend, GIBSError
 from .services.rotation import recommend_rotations, CROPS
 from .services.intelligence import vegetation, bare_windows, water_budget, historical_climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 
@@ -77,19 +77,36 @@ def imagery():
     try:
         lat,lon=float(request.args.get("lat","")),float(request.args.get("lon",""))
         layer=request.args.get("layer","modis_terra")
+        zoom=int(request.args.get("zoom","1"))
         day=date.fromisoformat(request.args.get("date",(date.today()-timedelta(days=3)).isoformat()))
     except ValueError: return jsonify({"error":"Provide valid coordinates and an ISO date"}),400
     if not (math.isfinite(lat) and math.isfinite(lon) and -90<=lat<=90 and -180<=lon<=180):
         return jsonify({"error":"Coordinates are outside valid ranges"}),400
     if day>date.today(): return jsonify({"error":"Imagery date cannot be in the future"}),400
     try:
-        image,metadata=fetch_gibs_image(lat,lon,day,layer)
+        image,metadata=fetch_gibs_image(lat,lon,day,layer,zoom)
         response=Response(image,mimetype=metadata.get("content_type","image/jpeg"))
         response.headers["X-Data-Source"]=metadata["provider"]
         response.headers["X-Data-Date"]=metadata["date"]
         response.headers["X-Data-Layer"]=metadata["layer"]["id"]
         response.headers["X-Data-Note"]=metadata["note"]
+        if metadata.get("bounds"):
+            response.headers["X-Map-Bounds"]=json.dumps(metadata["bounds"],separators=(",",":"))
         response.headers["Cache-Control"]="public, max-age=21600"
+        return response
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+    except GIBSError as exc: return jsonify({"error":str(exc),"source":"NASA GIBS"}),502
+
+@api.get("/imagery/legend")
+def imagery_legend():
+    layer=request.args.get("layer","modis_terra")
+    try:
+        image,metadata=fetch_gibs_legend(layer)
+        response=Response(image,mimetype=metadata.get("content_type","image/png"))
+        response.headers["X-Data-Source"]=metadata["provider"]
+        response.headers["X-Data-Layer"]=metadata["layer"]["id"]
+        response.headers["X-Data-Note"]=metadata["note"]
+        response.headers["Cache-Control"]="public, max-age=604800"
         return response
     except ValueError as exc: return jsonify({"error":str(exc)}),400
     except GIBSError as exc: return jsonify({"error":str(exc),"source":"NASA GIBS"}),502

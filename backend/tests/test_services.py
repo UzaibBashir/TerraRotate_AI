@@ -63,6 +63,8 @@ class PowerTests(unittest.TestCase):
         result = fetch_power_daily(33.7,75.1,date(2026,1,1),date(2026,1,2))
         self.assertEqual(result["rows"][0]["temperature_c"],2.5)
         self.assertIsNone(result["rows"][1]["temperature_c"])
+        self.assertEqual(result["rows"][0]["provenance"][0]["provider"],"NASA")
+        self.assertEqual(result["rows"][0]["provenance"][0]["unit"],"°C")
         self.assertEqual(result["quality"]["missing_days"],1)
         self.assertEqual(result["source"],"NASA POWER")
         self.assertEqual(get.call_args.kwargs["params"]["time-standard"],"UTC")
@@ -140,6 +142,16 @@ class GIBSTests(unittest.TestCase):
         self.assertEqual(image,b"jpeg-data")
         self.assertEqual(metadata["provider"],"NASA Global Imagery Browse Services (GIBS)")
         self.assertEqual(metadata["date"],"2026-01-01")
+    @patch("app.services.gibs.requests.get")
+    def test_gibs_zoom_updates_view_bounds(self,get):
+        response=Mock();response.url="https://gibs.earthdata.nasa.gov/wms/example";response.raise_for_status.return_value=None
+        response.headers={"Content-Type":"image/png"};response.content=b"png";get.return_value=response
+        _,metadata=fetch_gibs_image(33.7,75.1,date(2026,1,2),"modis_ndvi",2)
+        self.assertAlmostEqual(metadata["bounds"]["west"],74.875)
+        self.assertAlmostEqual(metadata["bounds"]["east"],75.325)
+        bbox=[float(value) for value in get.call_args.kwargs["params"]["BBOX"].split(",")]
+        self.assertAlmostEqual(bbox[2]-bbox[0],.45)
+        self.assertAlmostEqual(bbox[3]-bbox[1],.3)
 
 class ApiTests(unittest.TestCase):
     def setUp(self): self.client = create_app().test_client()
@@ -147,6 +159,7 @@ class ApiTests(unittest.TestCase):
     def test_rejects_invalid_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=91&lon=0").status_code,400)
     def test_rejects_nonfinite_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=NaN&lon=0").status_code,400)
     def test_rejects_unknown_imagery_layer(self): self.assertEqual(self.client.get("/api/imagery?lat=33&lon=75&layer=other").status_code,400)
+    def test_rejects_out_of_range_imagery_zoom(self): self.assertEqual(self.client.get("/api/imagery?lat=33&lon=75&zoom=5").status_code,400)
     def test_rejects_future_imagery_date(self):
         self.assertEqual(self.client.get("/api/imagery?lat=33&lon=75&date=2999-01-01").status_code,400)
     def test_rejects_invalid_projection_period(self): self.assertEqual(self.client.get("/api/climate/projection?lat=33&lon=75&start_year=2100&end_year=2040").status_code,400)

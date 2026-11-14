@@ -28,8 +28,12 @@ def _observations(body):
             raise ValueError("Each observation needs a valid ISO date and numeric value")
         if not math.isfinite(value) or not -1 <= value <= 1:
             raise ValueError("Vegetation index values must be between -1 and 1")
+        if day > date.today():
+            raise ValueError("Vegetation observation dates cannot be in the future")
         parsed.append({"date": day.isoformat(), "value": value})
     parsed.sort(key=lambda row: row["date"])
+    if len({row["date"] for row in parsed}) != len(parsed):
+        raise ValueError("Provide only one vegetation observation per date")
     return parsed, source, resolution
 
 
@@ -96,10 +100,12 @@ def climate_analogs(body):
     features=("temperature_c","precipitation_mm_day")
     try: base=[float(field[key]) for key in features]
     except (KeyError,TypeError,ValueError): raise ValueError("Each climate profile needs temperature_c and precipitation_mm_day")
+    if not all(math.isfinite(value) for value in base): raise ValueError("Climate profile values must be finite")
     scored=[]
     for candidate in candidates:
         try: vals=[float(candidate[key]) for key in features]
         except (KeyError,TypeError,ValueError): raise ValueError("Each climate profile needs temperature_c and precipitation_mm_day")
+        if not all(math.isfinite(value) for value in vals): raise ValueError("Climate profile values must be finite")
         distance=math.sqrt(((vals[0]-base[0])/10)**2+((vals[1]-base[1])/5)**2)
         scored.append({"name":str(candidate.get("name","Unnamed location")),"distance":round(distance,4),"similarity_score":round(100/(1+distance),1),"profile":{key:candidate[key] for key in features}})
     scored.sort(key=lambda x:x["distance"])
@@ -183,10 +189,12 @@ def bayesian_feedback(body):
     if not isinstance(helpful,bool): raise ValueError("helpful must be true or false and represent farmer feedback")
     alpha=float(body.get("prior_alpha",2)); beta=float(body.get("prior_beta",2))
     previous=body.get("previous_feedback",{"helpful":0,"not_helpful":0})
-    if alpha<=0 or beta<=0 or not isinstance(previous,dict): raise ValueError("Beta prior parameters must be positive")
+    if not math.isfinite(alpha) or not math.isfinite(beta) or alpha<=0 or beta<=0 or not isinstance(previous,dict): raise ValueError("Beta prior parameters must be finite and positive")
     try: a=alpha+int(previous.get("helpful",0))+int(helpful); b=beta+int(previous.get("not_helpful",0))+int(not helpful)
     except (TypeError,ValueError): raise ValueError("previous_feedback counts must be non-negative integers")
-    if int(previous.get("helpful",0))<0 or int(previous.get("not_helpful",0))<0: raise ValueError("previous_feedback counts cannot be negative")
+    try: h=int(previous.get("helpful",0)); n=int(previous.get("not_helpful",0))
+    except (TypeError,ValueError): raise ValueError("previous_feedback counts must be non-negative integers")
+    if h<0 or n<0 or h!=previous.get("helpful",0) or n!=previous.get("not_helpful",0): raise ValueError("previous_feedback counts must be non-negative integers")
     return {"module":"farmer_memory_bayesian_feedback","prior":{"alpha":alpha,"beta":beta,"mean":alpha/(alpha+beta)},
             "posterior":{"alpha":a,"beta":b,"mean":a/(a+b),"credible_interval_95":None},
             "feedback_count":int(previous.get("helpful",0))+int(previous.get("not_helpful",0))+1,
