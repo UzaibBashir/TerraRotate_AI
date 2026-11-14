@@ -6,6 +6,7 @@ BASE_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
 PARAMETERS = ("T2M", "PRECTOTCORR")
 PROJECTION_URL = "https://power.larc.nasa.gov/api/projection/monthly/point"
 HYDROLOGY_PARAMETERS = ("PRECTOTCORR", "SFMC", "RZMC", "EVPTRNS")
+MONTHLY_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point"
 
 class PowerError(RuntimeError): pass
 
@@ -84,3 +85,24 @@ def fetch_power_water(lat: float, lon: float, start: date, end: date) -> dict:
                 "url":response.url,"sample_mode":False}
     except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
         raise PowerError(f"NASA POWER hydrology data could not be retrieved or parsed: {exc}") from exc
+
+def fetch_power_monthly_profile(lat: float, lon: float, start_year: int, end_year: int) -> dict:
+    """Fetch NASA POWER monthly historical T2M and precipitation for climate analogues."""
+    params={"parameters":"T2M,PRECTOTCORR","community":"AG","longitude":f"{lon:.5f}","latitude":f"{lat:.5f}",
+            "start":str(start_year),"end":str(end_year),"format":"JSON"}
+    try:
+        response=requests.get(MONTHLY_URL,params=params,timeout=35); response.raise_for_status()
+        values=response.json()["properties"]["parameter"]
+        rows=[]
+        for month in sorted(values.get("T2M",{})):
+            if len(month)!=6 or month[-2:] not in {f"{i:02}" for i in range(1,13)}: continue
+            temp=values["T2M"].get(month); rain=values.get("PRECTOTCORR",{}).get(month)
+            valid=lambda v: v is not None and float(v)>-900
+            rows.append({"month":month,"temperature_c":float(temp) if valid(temp) else None,
+                         "precipitation_mm_day":float(rain) if valid(rain) else None})
+        return {"source":"NASA POWER Monthly Point API","provider":"NASA Langley Research Center POWER Project",
+                "coordinates":{"latitude":lat,"longitude":lon},"period":{"start_year":start_year,"end_year":end_year},
+                "parameters":["T2M","PRECTOTCORR"],"rows":rows,"url":response.url,
+                "resolution_note":"Nearest source grid; native resolution and source can vary by parameter.","sample_mode":False}
+    except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
+        raise PowerError(f"NASA POWER monthly climate data could not be retrieved or parsed: {exc}") from exc

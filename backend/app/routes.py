@@ -1,12 +1,13 @@
 from datetime import date, timedelta
+from concurrent.futures import ThreadPoolExecutor
 import math
 import json
 from pathlib import Path
 from flask import Blueprint, jsonify, request, Response, send_from_directory, abort
-from .services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, PowerError
+from .services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, fetch_power_monthly_profile, PowerError
 from .services.gibs import fetch_gibs_image, GIBSError
 from .services.rotation import recommend_rotations, CROPS
-from .services.intelligence import vegetation, bare_windows, water_budget, climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
+from .services.intelligence import vegetation, bare_windows, water_budget, historical_climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 
 api = Blueprint("api", __name__)
 SAMPLE_DIR = Path(__file__).resolve().parents[2] / "data" / "resource_samples"
@@ -131,8 +132,25 @@ def water_analysis():
 
 @api.post("/intelligence/climate-analogs")
 def climate_analog_analysis():
-    try: return jsonify(climate_analogs(_analysis_body()))
-    except ValueError as exc: return jsonify({"error":str(exc)}),400
+    try:
+        body=_analysis_body(); field=body.get("field"); candidates=body.get("candidates")
+        if not isinstance(field,dict) or not isinstance(candidates,list) or not candidates or len(candidates)>5:
+            raise ValueError("Provide a field coordinate and between one and five candidate coordinates")
+        start=int(body.get("start_year",1991)); end=int(body.get("end_year",2020)); latest=date.today().year-1
+        if start<1981 or end>latest or end<start or end-start>39: raise ValueError(f"Choose a historical period between 1981 and {latest}, no longer than 40 years")
+        sites=[{"name":"Field","latitude":float(field["latitude"]),"longitude":float(field["longitude"])}]
+        for candidate in candidates:
+            sites.append({"name":str(candidate.get("name","Candidate")),"latitude":float(candidate["latitude"]),"longitude":float(candidate["longitude"])})
+        if any(not (-90<=s["latitude"]<=90 and -180<=s["longitude"]<=180) for s in sites): raise ValueError("Coordinates are outside valid ranges")
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures=[pool.submit(fetch_power_monthly_profile,s["latitude"],s["longitude"],start,end) for s in sites]
+            profiles=[future.result() for future in futures]
+        for source,profile in zip(sites,profiles): source["data"]=profile
+        result=historical_climate_analogs(profiles[0],sites[1:]); result["candidate_count"]=len(candidates)
+        result["note"]="Similar locations depend on the candidate coordinates supplied; no global search is implied."
+        return jsonify(result)
+    except (ValueError,TypeError,KeyError) as exc: return jsonify({"error":str(exc)}),400
+    except PowerError as exc: return jsonify({"error":str(exc),"source":"NASA POWER Monthly Point API"}),502
 
 @api.post("/intelligence/zones")
 def zone_analysis():

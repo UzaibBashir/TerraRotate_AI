@@ -12,6 +12,9 @@ def _observations(body):
     resolution = body.get("resolution")
     if not source or not resolution:
         raise ValueError("Source and native product resolution are required provenance")
+    provider=str(source).strip().casefold()
+    if not (provider.startswith("nasa modis") or provider.startswith("nasa landsat") or provider.startswith("nasa viirs") or provider.startswith("esa sentinel-2")):
+        raise ValueError("Use an eligible challenge-listed NASA Landsat/MODIS/VIIRS product or listed ESA Sentinel-2 product and identify its version")
     parsed = []
     for item in rows:
         try:
@@ -19,8 +22,8 @@ def _observations(body):
             value = float(item["value"])
         except (KeyError, TypeError, ValueError):
             raise ValueError("Each observation needs a valid ISO date and numeric value")
-        if not math.isfinite(value) or not 0 <= value <= 1:
-            raise ValueError("Vegetation index values must be between 0 and 1")
+        if not math.isfinite(value) or not -1 <= value <= 1:
+            raise ValueError("Vegetation index values must be between -1 and 1")
         parsed.append({"date": day.isoformat(), "value": value})
     parsed.sort(key=lambda row: row["date"])
     return parsed, source, resolution
@@ -101,6 +104,34 @@ def climate_analogs(body):
             "interpretation":"Historical profile similarity only. Not a future-climate prediction; similarity depends on selected features and scaling."}
 
 
+def historical_climate_analogs(field_data, candidate_data):
+    def climatology(data):
+        grouped=defaultdict(lambda: {"temperature_c":[],"precipitation_mm_day":[]})
+        for row in data["rows"]:
+            month=row["month"][-2:]
+            if month not in {f"{i:02}" for i in range(1,13)}: continue
+            for key in grouped[month]:
+                if row.get(key) is not None: grouped[month][key].append(float(row[key]))
+        return {m:{key:sum(vals)/len(vals) if vals else None for key,vals in grouped[m].items()} for m in grouped}
+    field=climatology(field_data)
+    if len(field)<12: raise ValueError("NASA POWER field profile needs complete monthly coverage for the selected period")
+    scored=[]
+    for candidate in candidate_data:
+        profile=climatology(candidate["data"])
+        common=[month for month in field if month in profile and all(field[month][k] is not None and profile[month][k] is not None for k in ("temperature_c","precipitation_mm_day"))]
+        if len(common)<10: continue
+        squared=[]
+        for month in common:
+            squared.extend([((field[month]["temperature_c"]-profile[month]["temperature_c"])/10)**2,
+                            ((field[month]["precipitation_mm_day"]-profile[month]["precipitation_mm_day"])/5)**2])
+        distance=math.sqrt(sum(squared)/len(squared))
+        scored.append({"name":candidate["name"],"distance":round(distance,4),"similarity_score":round(100/(1+distance),1),"compared_months":len(common),"profile":profile,"coordinates":candidate["data"]["coordinates"]})
+    scored.sort(key=lambda x:x["distance"])
+    return {"module":"climate_analogs","source":"NASA POWER Monthly Point API","parameters":["T2M","PRECTOTCORR"],
+            "field_period":field_data["period"],"field_climatology":field,"analogs":scored,
+            "interpretation":"Historical NASA POWER climate similarity based on monthly temperature and precipitation seasonality. Not a future-climate prediction; coarse grid and parameter resolution vary."}
+
+
 def spatial_zones(body):
     points=body.get("points")
     k=body.get("zone_count",2)
@@ -122,7 +153,7 @@ def spatial_zones(body):
     # Include spatial distance at approximately 1 degree per feature standard deviation.
     vectors=[]
     for idx,row in enumerate(raw):
-        lat,lon=coords[idx]; vectors.append([((lat*111-means[0] if False else lat*111)/111), (lon*111*math.cos(math.radians(lat)))/111]+[(row[j]-means[j])/scales[j] for j in range(len(keys))])
+        lat,lon=coords[idx]; vectors.append([lat,lon*math.cos(math.radians(lat))]+[(row[j]-means[j])/scales[j] for j in range(len(keys))])
     centers=[vectors[i][:] for i in range(k)]; labels=[0]*len(points)
     for _ in range(30):
         labels=[min(range(k),key=lambda c:sum((vectors[i][j]-centers[c][j])**2 for j in range(len(vectors[i])))) for i in range(len(points))]

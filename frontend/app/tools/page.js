@@ -7,7 +7,7 @@ const modules = [
   ["water","Water budget","/intelligence/water","NASA POWER HY data is retrieved for the coordinates. Rainfall scenarios, crop demand, area and irrigation are your planning inputs."],
   ["rotation","RotationRisk sensitivity","/intelligence/rotation-risk", "Compare the leading rotation across four preference settings. This does not produce a confidence estimate."],
   ["bare","Possible bare windows","/intelligence/bare-windows","Uses dated vegetation values and reports possible low-vegetation windows only."],
-  ["climate","Historical climate analogues","/intelligence/climate-analogs","Compare historical climate profiles you provide. Similarity is not a future prediction."],
+  ["climate","Historical climate analogues","/intelligence/climate-analogs","Uses NASA POWER monthly history for your field point and up to five candidate points. Analogues are not future predictions."],
   ["zones","Sample-point zones","/intelligence/zones","Cluster georeferenced measurements you provide. Results are not contiguous field boundaries."],
   ["memory","Farmer feedback memory","/intelligence/farmer-feedback","Bayesian Beta update for subjective feedback. Saved in this browser only; no account database is configured."],
 ];
@@ -19,8 +19,8 @@ Vegetation / bare windows:
 Water:
 {"latitude":33.73,"longitude":75.15,"area_hectares":1,"crop_demand_mm":300,"irrigation_mm":40,"expected_rainfall_mm":{"dry":30,"normal":80,"wet":140}}
 
-Climate analogues:
-{"field_profile":{"temperature_c":12,"precipitation_mm_day":2},"candidates":[{"name":"Site A","temperature_c":11,"precipitation_mm_day":2.2}]}
+Climate analogues (provide real candidate coordinates):
+{"field":{"latitude":33.73,"longitude":75.15},"candidates":[{"name":"Candidate site","latitude":34,"longitude":76}],"start_year":1991,"end_year":2020}
 
 Zones:
 {"zone_count":2,"features":["ndvi"],"source":"NASA product and version","resolution":"native pixel size","points":[{"latitude":33.7,"longitude":75.1,"ndvi":0.4},{"latitude":33.71,"longitude":75.11,"ndvi":0.7},{"latitude":33.72,"longitude":75.12,"ndvi":0.5}]}
