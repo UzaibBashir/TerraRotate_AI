@@ -1,20 +1,40 @@
-# NASA challenge resource allowlist
+# Official Field Shift resource register and allowlist
 
-**Status: transcribed from a public mirror; direct official challenge page retrieval failed on 14 Nov 2026.** The official Field Shift challenge Resources tab remains authoritative. Confirm the entries there before adding another NASA connector or finalizing the submission declaration.
+**Verified against the official Resources tab in the browser on 14 Nov 2026.** Official page: https://www.spaceappschallenge.org/2026/challenges/adapting-farms-with-nasa-data/?tab=resources . The tab labels this section “NASA Data & Resources”; it includes NASA datasets and non-NASA resources. Provider below is classified from each item’s owner, not only the section heading.
 
-| Listed NASA item | Official URL | Provider / resource role | Resolution / access notes | Current use |
-|---|---|---|---|---|
-| Soil Moisture Active Passive (SMAP) | https://www.earthdata.nasa.gov/data/platforms/space-based-platforms/smap | NASA; surface soil moisture and freeze/thaw | Product-dependent grid; resource text says 2–3 day observations; Earthdata | Not integrated |
-| Global Precipitation Measurement (GPM) & IMERG | https://gpm.nasa.gov/data | NASA; precipitation rate/accumulation | IMERG product-dependent; NASA data services / Worldview | Not integrated |
-| Landsat | https://earthexplorer.usgs.gov/ | NASA/USGS mission data; USGS portal | Reflectance / vegetation indices; 30 m per resource summary | Not integrated |
-| MODIS | https://lpdaac.usgs.gov/ | NASA instrument; USGS LP DAAC | Product-dependent; 250–1000 m per resource summary | Not integrated |
-| VIIRS | https://search.earthdata.nasa.gov/ | NASA/NOAA instruments; Earthdata | Product-dependent | Not integrated |
-| NASA POWER | https://power.larc.nasa.gov/ | NASA Langley; solar and meteorological variables | Product/grid dependent; point API | **Integrated: daily T2M and PRECTOTCORR** |
-| Shuttle Radar Topography Mission (SRTM) | https://www.earthdata.nasa.gov/data/instruments/srtm | NASA; elevation / terrain | Product-dependent global grid; Earthdata | Not integrated |
-| ECOSTRESS | https://ecostress.jpl.nasa.gov/data | NASA JPL; land surface temperature / evapotranspiration | Product/swath/revisit dependent | Not integrated |
-| NLDAS / GLDAS | https://www.earthdata.nasa.gov/ | NASA; gridded land variables | Product-dependent; NLDAS mainly North America, GLDAS global | Not integrated |
-| GEDI | https://gedi.umd.edu/ | NASA; lidar vegetation structure / biomass | Footprint sampling and product-dependent | Not integrated |
+The challenge lists 24 resource cards (22 in NASA Data & Resources and 2 ESA partner resources). They are suggested materials, not 24 mandatory integrations. The challenge requires at least one listed NASA resource and clear source documentation. This register is the allowlist authority for NASA integrations. U.S.-only resources and products needing credentials are not integrated into the global Kashmir demonstration.
 
-## Verification caveat
+| # | Challenge resource / official link | Actual provider | Variables / purpose stated on challenge page | Resolution / temporal detail on page | TerraRotate use |
+|---:|---|---|---|---|---|
+| 1 | [Soil Moisture Active Passive (SMAP)](https://earthdata.nasa.gov/data/platforms/space-based-platforms/smap) | NASA | Surface soil moisture; freeze/thaw state | Global; observations every 2–3 days (product grid varies) | Eligible; not integrated. Coarse product must not be treated as field sensor data. |
+| 2 | [Global Precipitation Measurement (GPM) & IMERG](https://gpm.nasa.gov/data) | NASA / NASA-JAXA mission | Precipitation rate and accumulation; rainfall reliability and extremes | NASA describes IMERG as 0.1° (~10 km), 30-minute data; product/run matters | Eligible; not integrated. |
+| 3 | [Landsat](https://earthexplorer.usgs.gov/) · [MODIS](https://lpdaac.usgs.gov/products/) · [VIIRS](https://search.earthdata.nasa.gov/search?q=VIIRS) | NASA missions / instruments; USGS and NASA data portals; VIIRS instrument lineage includes NOAA | Reflectance, NDVI, vegetation indices, seasonal/bare-ground change | Challenge text: Landsat 30 m; MODIS/VIIRS 250–1000 m; product-specific | Eligible; not integrated. No NDVI or crop-stress claim is currently made. |
+| 4 | [NASA POWER](https://power.larc.nasa.gov/) | NASA Langley Research Center | Agroclimatology, solar and meteorological data | Parameter/grid and temporal product dependent | **Integrated:** daily `T2M`, `PRECTOTCORR` via point API. |
+| 5 | [Shuttle Radar Topography Mission (SRTM)](https://earthdata.nasa.gov/data/instruments/srtm) | NASA / USGS mission | Elevation, terrain, slope, runoff and erosion context | Global elevation products; product-dependent grid | Eligible; not integrated. |
+| 6 | [ECOSTRESS](https://ecostress.jpl.nasa.gov/data) | NASA Jet Propulsion Laboratory | Land-surface temperature and evapotranspiration | High spatial resolution; swath, revisit and product dependent | Eligible; not integrated. |
+| 7 | [USDA Ag Data Commons](https://www.nal.usda.gov/services/agdatacommons) | USDA, United States | Agricultural datasets: soils, crops, climate and management | Dataset dependent; U.S. emphasis | Not used. Soil inputs remain farmer supplied. |
+| 8 | [Web Soil Survey (WSS)](https://websoilsurvey.nrcs.usda.gov/app/) | USDA NRCS, United States | Soil properties, drainage, erosion and land suitability | U.S. coverage; map-unit/product dependent | Not used; U.S.-only and project requires farmer-entered soil for this demo. |
+| 9 | [Cropland Data Layer: CropScape](https://nassgeodata.gmu.edu/CropScape/) | USDA NASS, United States | Annual crop classifications and rotation history | U.S.; challenge text says annual 30 m | Not used; U.S.-only. |
+| 10 | [PRISM Climate Data](https://prism.oregonstate.edu/) | Oregon State University, United States | Precipitation, temperature and climate normals | U.S.; daily/monthly/normal products | Not used; non-NASA and U.S.-focused. |
+| 11 | [USDA NRCS SSURGO / STATSGO2](https://www.nrcs.usda.gov/resources/data-and-reports/soils) | USDA NRCS, United States | Soil texture, organic matter, drainage and water holding | U.S.; SSURGO detailed, STATSGO2 regional | Not used; U.S.-only. |
+| 12 | [National Agriculture Imagery Program (NAIP)](https://naip-usdaonline.hub.arcgis.com/) | USDA, United States | Aerial imagery, fields, bare soil and crop development | U.S.; typically about 1 m, seasonal | Not used; U.S.-only, non-NASA imagery. |
+| 13 | [USGS National Land Cover Database (NLCD)](https://www.usgs.gov/centers/eros/science/national-land-cover-database) | USGS, United States | Land cover and land-use context | U.S.; challenge text says 30 m, multi-decadal | Not used; U.S.-only. |
+| 14 | [NLDAS / GLDAS Land Data Assimilation Systems](https://earthdata.nasa.gov/) | NASA data systems | Gridded precipitation, temperature, soil moisture and ET proxies | Product-dependent sub-daily grids; NLDAS North America, GLDAS global | Eligible NASA resource; not integrated. |
+| 15 | [FAO Global Agro-Ecological Zones (GAEZ)](https://gaez.fao.org/) | FAO, United Nations | Crop suitability, soil constraints and water availability | Global; dataset dependent | Not used; crop ratings require local review and provenance. |
+| 16 | [CoCoRaHS](https://www.cocorahs.org/Maps) | Community precipitation network, United States/Canada | Community rain/snow observations for comparison with satellite estimates | Station coverage and daily reporting; North America | Not used; geographically inapplicable to Kashmir. |
+| 17 | [USGS National Water Information System (NWIS)](https://waterdata.usgs.gov/nwis) | USGS, United States | Groundwater, streamflow, stage and water quality | U.S. station network; station/time dependent | Not used; U.S.-only. |
+| 18 | [USDA AMS Market News](https://www.ams.usda.gov/market-news) | USDA, United States | Commodity market prices and demand | U.S. markets; commodity and reporting interval dependent | Not used; U.S.-focused; farmer priorities remain user-supplied. |
+| 19 | [USDA NASS QuickStats](https://quickstats.nass.usda.gov/) | USDA NASS, United States | Crop acreage, production and yield statistics | U.S. county/state; reporting period dependent | Not used; U.S.-only. |
+| 20 | [OpenET](https://openetdata.org/) | OpenET consortium (non-NASA) | Satellite-driven evapotranspiration for water management | Western United States; field-scale product dependent | Not used; geographically inapplicable to Kashmir and not NASA data. |
+| 21 | [USFS LANDFIRE](https://landfire.gov/) | US Forest Service, United States | Vegetation and fuels / landscape layers | U.S.; layer-dependent | Not used; U.S.-only. |
+| 22 | [Global Ecosystem Dynamics Investigation (GEDI)](https://gedi.umd.edu/data) | NASA mission; data hosted by University of Maryland | Lidar forest structure and biomass context | Footprint sampling; not wall-to-wall field coverage | Eligible; not integrated; limited relevance to annual crop parcels. |
+| 23 | [Copernicus Sentinel-2](https://dataspace.copernicus.eu/) | ESA partner | Multispectral vegetation, bare-soil and crop indicators | 10–20 m as described on challenge page | ESA partner resource; not integrated. |
+| 24 | [ERA5 ECMWF Reanalysis](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview) | ECMWF / Copernicus, ESA partner resource listing | Hourly climate variables and reanalysis context | Global hourly reanalysis; dataset dependent | ESA partner resource; not integrated. |
 
-The brief links to https://www.spaceappschallenge.org/2026/challenges/adapting-farms-with-nasa-data/?tab=resources . Direct retrieval failed. Search surfaced an alternate official route, https://www.spaceappschallenge.org/2026/challenges/field-shift-adapting-farms-with-nasa-data/ , which returned 502. The public mirror at https://hackathlone.com/challenges/adapting-farms-with-nasa-data lists 24 entries: ten NASA resources, twelve other resources, and two ESA partner resources. The table above is an interim transcription, not a claim of direct official-tab verification. The mirror also describes some non-NASA portals as the access route for NASA mission data; no such connectors are currently used.
+## Integration rules
+
+1. NASA connectors are limited to rows 1–6, 14, and 22. Every integration must identify exact product/version, parameters, dates, native resolution, and access route.
+2. Current connector is NASA POWER (row 4); its eligibility is directly verified. Its point values are gridded estimates, not field measurements.
+3. Resources marked “not integrated” are challenge suggestions, not data used by TerraRotate. Do not list them as used data in submissions.
+4. Non-NASA resources must not be described as NASA datasets. U.S.-only resources are excluded from the Kashmir/global demo. Soil characteristics remain manually entered.
+5. Coarse pixels and footprint sampling must not be represented as field-scale observations. Do not substitute a different dataset when an API is unavailable.
