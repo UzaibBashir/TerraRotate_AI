@@ -1,4 +1,5 @@
-"""Transparent rule-based rotation comparisons, not validated agronomic measurements."""
+"""Transparent rotation ranking baseline, not validated agronomic measurements."""
+from itertools import permutations
 CROPS = {
  "potato":{"name":"Potato","family":"Solanaceae","duration_days":120,"season":"spring/summer","water":"high","nitrogen_fixing":False},
  "rice":{"name":"Rice","family":"Poaceae","duration_days":150,"season":"summer/autumn","water":"high","nitrogen_fixing":False},
@@ -18,14 +19,21 @@ def recommend_rotations(body):
     if priority=="water": weights={"water":.60,"diversity":.15,"soil":.15,"preference":.10}
     elif priority=="soil": weights={"water":.15,"diversity":.25,"soil":.50,"preference":.10}
     elif priority=="diversity": weights={"water":.15,"diversity":.55,"soil":.20,"preference":.10}
+    custom=body.get("weights")
+    if custom is not None:
+        if not isinstance(custom,dict) or set(custom)!=set(BASE): raise ValueError("weights must provide water, diversity, soil, and preference values")
+        try: weights={key:float(value) for key,value in custom.items()}
+        except (TypeError,ValueError): raise ValueError("weights must be numeric")
+        if any(not __import__("math").isfinite(v) or v<0 for v in weights.values()) or sum(weights.values())<=0:
+            raise ValueError("weights must be finite, non-negative, and have a positive total")
+        total=sum(weights.values()); weights={key:value/total for key,value in weights.items()}
     water_scores={"low":1.,"medium":.65,"high":.3}
-    templates=[["wheat","pea"],["mustard","wheat"],["pea","maize"],["potato","mustard"],["rice","pea"]]
     choices=[]
-    for pair in templates:
-        seq=[current]+[c for c in pair if c != current]
-        if len(seq)==3 and seq not in choices and len({CROPS[c]["family"] for c in seq}) >= 2:
+    alternatives=[crop for crop in CROPS if crop!=current]
+    for tail in permutations(alternatives,2):
+        seq=[current,*tail]
+        if all(CROPS[seq[i]]["family"]!=CROPS[seq[i+1]]["family"] for i in range(2)):
             choices.append(seq)
-        if len(choices)==2: break
     sequences=[[current,current,current]]+choices
     result=[]
     for seq in sequences:
@@ -36,7 +44,10 @@ def recommend_rotations(body):
         soil=min(1.,.45+legumes*.25); pref=.8 if priority=="balanced" else 1.
         score=round(100*(weights["water"]*wfit+weights["diversity"]*diversity+weights["soil"]*soil+weights["preference"]*pref))
         title="Current crop continued" if len(set(seq))==1 else "Alternative rotation"
-        result.append({"title":title,"sequence":seq,"score":score,"components":{"water_fit":round(wfit,2),"family_diversity":round(diversity,2),"nitrogen_fixing_crop_count":legumes,"soil_proxy":round(soil,2)},"explanation":f"Includes {legumes} legume crop(s) and {len({c['family'] for c in crops})} crop families; water fit uses broad catalog classes.","caveats":["Normalized comparison aid, not probability, yield estimate or validated soil effect.","Check local cultivars, planting dates, soil test, market and rotation history with an agricultural expert."],"weights":weights})
+        result.append({"title":title,"sequence":seq,"score":score,"components":{"water_fit":round(wfit,2),"family_diversity":round(diversity,2),"nitrogen_fixing_crop_count":legumes,"legume_practice_proxy_not_soil_measurement":round(soil,2)},"explanation":f"Three-season sequence; no repeated crop family in adjacent seasons for alternatives. Includes {legumes} legume crop(s) and {len({c['family'] for c in crops})} crop families; water fit uses broad catalog classes.","caveats":["Normalized comparison aid, not probability, yield estimate or measured soil effect. The legume proxy is a practice indicator only.","Check local cultivars, planting dates, soil test, market and rotation history with an agricultural expert."],"weights":weights})
+    baseline=next(row for row in result if row["title"]=="Current crop continued")
+    alternatives=sorted((row for row in result if row["title"]!="Current crop continued"),key=lambda x:(-x["score"],x["sequence"]))[:2]
+    result=[baseline,*alternatives]
     result.sort(key=lambda x:x["score"],reverse=True)
     soil=body.get("soil") or {}
     if not isinstance(soil,dict): raise ValueError("soil must be an object of farmer-entered values")
@@ -53,4 +64,4 @@ def recommend_rotations(body):
     if not soil_inputs: gaps.append("No farmer-entered soil details supplied")
     else: gaps.append("Farmer-entered soil details are shown as context but not used in scoring because locally verified crop suitability ranges are incomplete")
     gaps.append("No field-level yield or pest data")
-    return {"recommendations":result,"method":"Transparent weighted rule baseline","current_crop":current,"water_availability":water,"priority":priority,"soil_inputs":soil_inputs,"data_gaps":gaps,"source":"docs/crop_catalog.md"}
+    return {"recommendations":result,"method":"Transparent weighted rule baseline","hard_constraints":["three-season comparisons","no repeated crop family in adjacent alternative seasons","catalog-listed crops only"],"current_crop":current,"water_availability":water,"priority":priority,"soil_inputs":soil_inputs,"data_gaps":gaps,"source":"docs/crop_catalog.md"}

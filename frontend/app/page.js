@@ -57,7 +57,7 @@ export default function Home() {
   });
 
   return <main className="shell">
-    <header className="topbar"><div className="brand">◒ TERRAROTATE <span style={{fontWeight:400}}>AI</span></div><nav className="nav"><span>Field overview</span><span>Rotations</span><a href="/sources">Data sources</a></nav><div style={{fontSize:12,color:"#66756e"}}>DEMO · KASHMIR</div></header>
+    <header className="topbar"><a className="brand" href="/">◒ TERRAROTATE <span style={{fontWeight:400}}>AI</span></a><nav className="nav"><span>Field overview</span><a href="/tools">Analysis tools</a><a href="/sources">Data sources</a></nav><div style={{fontSize:12,color:"#66756e"}}>GLOBAL DEMO · KASHMIR EXAMPLE</div></header>
     <section className="hero"><div><div className="eyebrow">FIELD SHIFT · FARM ADAPTATION</div><h1>Plan the next season<br/>with the evidence in view.</h1><p>Explore NASA climate and Earth imagery alongside field details and farmer priorities. Every comparison shows its reasoning and information gaps.</p></div><div className="hero-badge">Decision support · farmer-led</div></section>
     <section className="content">
       <div className="grid">

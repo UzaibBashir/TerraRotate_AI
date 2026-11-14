@@ -3,9 +3,10 @@ import math
 import json
 from pathlib import Path
 from flask import Blueprint, jsonify, request, Response, send_from_directory, abort
-from .services.power import fetch_power_daily, fetch_power_projection, PowerError
+from .services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, PowerError
 from .services.gibs import fetch_gibs_image, GIBSError
 from .services.rotation import recommend_rotations, CROPS
+from .services.intelligence import vegetation, bare_windows, water_budget, climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 
 api = Blueprint("api", __name__)
 SAMPLE_DIR = Path(__file__).resolve().parents[2] / "data" / "resource_samples"
@@ -96,3 +97,53 @@ def imagery():
 def rotations():
     try: return jsonify(recommend_rotations(request.get_json(silent=True) or {}))
     except ValueError as exc: return jsonify({"error": str(exc)}), 400
+
+def _analysis_body():
+    body=request.get_json(silent=True)
+    if not isinstance(body,dict): raise ValueError("Send a JSON object")
+    return body
+
+@api.post("/intelligence/vegetation")
+def vegetation_analysis():
+    try: return jsonify(vegetation(_analysis_body()))
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+
+@api.post("/intelligence/bare-windows")
+def bare_window_analysis():
+    try: return jsonify(bare_windows(_analysis_body()))
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+
+@api.post("/intelligence/water")
+def water_analysis():
+    try:
+        body=_analysis_body(); lat=float(body.get("latitude")); lon=float(body.get("longitude"))
+        if not (math.isfinite(lat) and math.isfinite(lon) and -90<=lat<=90 and -180<=lon<=180): raise ValueError("Coordinates are outside valid ranges")
+        end=date.today()-timedelta(days=3)
+        nasa=fetch_power_water(lat,lon,end-timedelta(days=29),end)
+        valid=[row for row in nasa["rows"] if row.get("sfmc") is not None or row.get("rzmc") is not None]
+        if valid:
+            nasa["soil_moisture_summary"]={"mean_surface_volumetric_content":round(sum(r["sfmc"] for r in valid if r.get("sfmc") is not None)/sum(r.get("sfmc") is not None for r in valid),4) if any(r.get("sfmc") is not None for r in valid) else None,
+                                           "mean_root_zone_volumetric_content":round(sum(r["rzmc"] for r in valid if r.get("rzmc") is not None)/sum(r.get("rzmc") is not None for r in valid),4) if any(r.get("rzmc") is not None for r in valid) else None,
+                                           "note":"Coarse gridded NASA estimate; not a field sensor reading."}
+        return jsonify(water_budget(body,nasa))
+    except (ValueError,TypeError) as exc: return jsonify({"error":str(exc)}),400
+    except PowerError as exc: return jsonify({"error":str(exc),"source":"NASA POWER Daily Hydrology"}),502
+
+@api.post("/intelligence/climate-analogs")
+def climate_analog_analysis():
+    try: return jsonify(climate_analogs(_analysis_body()))
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+
+@api.post("/intelligence/zones")
+def zone_analysis():
+    try: return jsonify(spatial_zones(_analysis_body()))
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+
+@api.post("/intelligence/farmer-feedback")
+def feedback_analysis():
+    try: return jsonify(bayesian_feedback(_analysis_body()))
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+
+@api.post("/intelligence/rotation-risk")
+def rotation_risk_analysis():
+    return jsonify(rotation_risk(recommend_rotations))

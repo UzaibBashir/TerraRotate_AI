@@ -5,6 +5,7 @@ import requests
 BASE_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
 PARAMETERS = ("T2M", "PRECTOTCORR")
 PROJECTION_URL = "https://power.larc.nasa.gov/api/projection/monthly/point"
+HYDROLOGY_PARAMETERS = ("PRECTOTCORR", "SFMC", "RZMC", "EVPTRNS")
 
 class PowerError(RuntimeError): pass
 
@@ -56,3 +57,30 @@ def fetch_power_daily(lat: float, lon: float, start: date, end: date) -> dict:
                 "retrieved_at":date.today().isoformat(),"sample_mode":False}
     except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
         raise PowerError(f"NASA POWER data could not be retrieved or parsed: {exc}") from exc
+
+def fetch_power_water(lat: float, lon: float, start: date, end: date) -> dict:
+    """Fetch NASA POWER daily hydrology variables exposed through the AG endpoint."""
+    params={"parameters":",".join(HYDROLOGY_PARAMETERS),"community":"AG","longitude":f"{lon:.5f}",
+            "latitude":f"{lat:.5f}","start":start.strftime("%Y%m%d"),"end":end.strftime("%Y%m%d"),
+            "format":"JSON","time-standard":"UTC"}
+    try:
+        response=requests.get(BASE_URL,params=params,timeout=30); response.raise_for_status()
+        values=response.json()["properties"]["parameter"]
+        dates=sorted(set().union(*(set(series) for series in values.values() if isinstance(series,dict))))
+        rows=[]
+        for day in dates:
+            row={"date":day}
+            for param in HYDROLOGY_PARAMETERS:
+                value=values.get(param,{}).get(day)
+                try: value=float(value) if value is not None and float(value)>-900 else None
+                except (ValueError,TypeError): value=None
+                row[param.lower()]=value
+            rows.append(row)
+        return {"source":"NASA POWER Daily hydrology parameters","provider":"NASA Langley Research Center POWER Project",
+                "community":"AG (API-tested); parameter families are hydrology-related","parameters":list(HYDROLOGY_PARAMETERS),"coordinates":{"latitude":lat,"longitude":lon},
+                "period":{"start":start.isoformat(),"end":end.isoformat()},"rows":rows,
+                "resolution_note":"Hydrology parameters can use different native source grids; soil moisture and meteorology should not be assumed to share a pixel resolution.",
+                "units_note":"PRECTOT is mm/day; SFMC and RZMC are volumetric water content; EVPTRNS is an energy flux and is not converted here to water depth.",
+                "url":response.url,"sample_mode":False}
+    except (requests.RequestException,ValueError,KeyError,TypeError) as exc:
+        raise PowerError(f"NASA POWER hydrology data could not be retrieved or parsed: {exc}") from exc
