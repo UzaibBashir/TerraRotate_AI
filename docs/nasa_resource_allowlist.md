@@ -6,8 +6,8 @@ The challenge lists 24 resource cards (22 in NASA Data & Resources and 2 ESA par
 
 | # | Challenge resource / official link | Actual provider | Variables / purpose stated on challenge page | Resolution / temporal detail on page | TerraRotate use |
 |---:|---|---|---|---|---|
-| 1 | [Soil Moisture Active Passive (SMAP)](https://earthdata.nasa.gov/data/platforms/space-based-platforms/smap) | NASA | Surface soil moisture; freeze/thaw state | Global; observations every 2–3 days (product grid varies) | Eligible; not integrated. Coarse product must not be treated as field sensor data. |
-| 2 | [Global Precipitation Measurement (GPM) & IMERG](https://gpm.nasa.gov/data) | NASA / NASA-JAXA mission | Precipitation rate and accumulation; rainfall reliability and extremes | NASA describes IMERG as 0.1° (~10 km), 30-minute data; product/run matters | Eligible; not integrated. |
+| 1 | [Soil Moisture Active Passive (SMAP)](https://earthdata.nasa.gov/data/platforms/space-based-platforms/smap) | NASA | Surface soil moisture; freeze/thaw state | Global; observations every 2–3 days (product grid varies) | **Integrated as NASA GIBS SMAP L4 surface-soil-moisture visualization.** Display context only; no point value is extracted or used in scoring. |
+| 2 | [Global Precipitation Measurement (GPM) & IMERG](https://gpm.nasa.gov/data) | NASA / NASA-JAXA mission | Precipitation rate and accumulation; rainfall reliability and extremes | NASA describes IMERG as 0.1° (~10 km), 30-minute data; product/run matters | **Integrated as NASA GIBS IMERG daily precipitation-rate visualization.** Display context only; not daily accumulation or a numeric input to scoring. |
 | 3 | [Landsat](https://earthexplorer.usgs.gov/) · [MODIS](https://lpdaac.usgs.gov/products/) · [VIIRS](https://search.earthdata.nasa.gov/search?q=VIIRS) | NASA missions / instruments; USGS and NASA data portals; VIIRS instrument lineage includes NOAA | Reflectance, NDVI, vegetation indices, seasonal/bare-ground change | Challenge text: Landsat 30 m; MODIS/VIIRS 250–1000 m; product-specific | **Partially integrated for visual context:** NASA GIBS true-color browse layers for Terra/Aqua MODIS and SNPP VIIRS. Landsat not connected. No NDVI or crop-stress claim is made. |
 | 4 | [NASA POWER](https://power.larc.nasa.gov/) | NASA Langley Research Center | Agroclimatology, solar and meteorological data | Parameter/grid and temporal product dependent | **Integrated:** daily `T2M`, `PRECTOTCORR`; monthly 2041–2060 `T2M`, `PRECTOTCORR` projection ensemble and SSP scenarios. |
 | 5 | [Shuttle Radar Topography Mission (SRTM)](https://earthdata.nasa.gov/data/instruments/srtm) | NASA / USGS mission | Elevation, terrain, slope, runoff and erosion context | Global elevation products; product-dependent grid | Eligible; not integrated. |
@@ -34,7 +34,7 @@ The challenge lists 24 resource cards (22 in NASA Data & Resources and 2 ESA par
 ## Integration rules
 
 1. NASA connectors are limited to rows 1–6, 14, and 22. Every integration must identify exact product/version, parameters, dates, native resolution, and access route.
-2. Current connector is NASA POWER (row 4); its eligibility is directly verified. Its point values are gridded estimates, not field measurements.
+2. Current NASA integrations are POWER (row 4) and NASA GIBS visualizations of SMAP, GPM/IMERG, MODIS, and VIIRS (rows 1–3). POWER values are gridded estimates, not field measurements. GIBS layers are rendered imagery, not extracted measurement values.
 3. Resources marked “not integrated” are challenge suggestions, not data used by TerraRotate. Do not list them as used data in submissions.
 4. Non-NASA resources must not be described as NASA datasets. U.S.-only resources are excluded from the Kashmir/global demo. Soil characteristics remain manually entered.
 5. Coarse pixels and footprint sampling must not be represented as field-scale observations. Do not substitute a different dataset when an API is unavailable.

@@ -18,4 +18,4 @@ The `/api/climate/projection` route requests NASA POWER Projection API monthly `
 
 ## Satellite visual context
 
-The `/api/imagery` route requests true-color visualizations from NASA GIBS for MODIS Terra, MODIS Aqua, or Suomi NPP VIIRS corrected reflectance. The image is browse imagery rendered for the selected bounding box. It is not used for NDVI calculation, crop classification, field-zone detection, or crop-stress diagnosis. Daily imagery may be absent for a chosen date and is then shown as unavailable.
+The `/api/imagery` route requests NASA GIBS imagery for MODIS Terra, MODIS Aqua, Suomi NPP VIIRS, GPM IMERG precipitation rate, or SMAP L4 analyzed surface soil moisture. The image is rendered for a small bounding box around the selected coordinate. SMAP and IMERG layers show geophysical context at their source product scale; the app does not decode the colors into numeric observations or use them in recommendations. MODIS/VIIRS imagery is not used for NDVI calculation, crop classification, field-zone detection, or crop-stress diagnosis. Product coverage may be absent on a selected date.
