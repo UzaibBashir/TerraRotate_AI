@@ -10,9 +10,11 @@ from __future__ import annotations
 import csv
 import json
 from datetime import date, timedelta
+from io import BytesIO
 from pathlib import Path
 
 import requests
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "resource_samples"
@@ -33,6 +35,29 @@ GIBS_LAYERS = {
     "imerg_precipitation_rate": ("IMERG_Precipitation_Rate", "image/png"),
     "smap_l4_surface_soil_moisture": ("SMAP_L4_Analyzed_Surface_Soil_Moisture", "image/png"),
 }
+
+
+def image_has_observations(content: bytes) -> bool:
+    """Reject all-black/transparent WMS responses that are valid images but no data."""
+    image = Image.open(BytesIO(content)).convert("RGBA")
+    pixels = image.width * image.height
+    alpha_hist = image.getchannel("A").histogram()
+    visible_fraction = sum(alpha_hist[1:]) / pixels
+    gray_hist = image.convert("RGB").convert("L").histogram()
+    nonblack_fraction = sum(gray_hist[8:]) / pixels
+    color_count = len(image.convert("RGB").getcolors(maxcolors=1_000_000) or [])
+    return visible_fraction > 0.005 and nonblack_fraction > 0.005 and color_count > 8
+
+
+def candidate_imagery_dates(requested: date) -> list[date]:
+    days = [requested - timedelta(days=offset) for offset in range(15)]
+    # GIBS imagery layers have different processing delays. Also probe recent
+    # month starts after the daily window so a no-data image is not saved as a sample.
+    year, month = requested.year, requested.month
+    for months_back in (1, 2, 3, 6, 12):
+        absolute = year * 12 + month - 1 - months_back
+        days.append(date(absolute // 12, absolute % 12 + 1, 1))
+    return list(dict.fromkeys(days))
 
 
 def download_power() -> dict:
@@ -76,8 +101,7 @@ def download_gibs() -> list[dict]:
     requested = date.today() - timedelta(days=3)
     for slug, (layer, image_format) in GIBS_LAYERS.items():
         last_error = None
-        for offset in range(15):
-            day = requested - timedelta(days=offset)
+        for day in candidate_imagery_dates(requested):
             params = {
                 "SERVICE": "WMS", "VERSION": "1.1.1", "REQUEST": "GetMap",
                 "LAYERS": layer, "STYLES": "", "SRS": "EPSG:4326",
@@ -92,6 +116,9 @@ def download_gibs() -> list[dict]:
                 continue
             content_type = response.headers.get("Content-Type", "").split(";", 1)[0].lower()
             if content_type == image_format:
+                if not image_has_observations(response.content):
+                    last_error = f"no visible observations on {day.isoformat()}"
+                    continue
                 ext = "jpg" if image_format == "image/jpeg" else "png"
                 filename = f"{slug}_{day.isoformat()}.{ext}"
                 (OUT / filename).write_bytes(response.content)
@@ -104,7 +131,7 @@ def download_gibs() -> list[dict]:
                 break
             last_error = f"{content_type or 'unknown content type'} on {day.isoformat()}"
         else:
-            results.append({"layer": layer, "error": f"No image returned in 15-day window: {last_error}"})
+            results.append({"layer": layer, "error": f"No usable image found in recent date checks: {last_error}"})
     return results
 
 

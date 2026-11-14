@@ -1,0 +1,25 @@
+resource,global_applicability,downloaded_sample,status_or_reason
+SMAP,Near-global product-dependent,SMAP L4 GIBS global PNG,Raw numeric granule requires Earthdata-authenticated product selection
+GPM / IMERG,Near-global product-dependent,GPM IMERG GIBS global PNG,Raw numeric granule requires product/run and authenticated access
+Landsat / MODIS / VIIRS,Near-global land product-dependent,MODIS NDVI and MODIS/VIIRS true-color GIBS maps; no Landsat file,Analysis-ready reflectance requires product/area/date selection; Landsat sample not downloaded
+NASA POWER,Global product/parameter-dependent,Daily point CSV for six illustrative global locations,Projection dataset not included in this small historical sample
+SRTM,Near-global land with latitude limits,No raster downloaded,Choose DEM product/version and area; a global raster is too large for this sample bundle
+ECOSTRESS,ISS swath coverage only,No granule downloaded,Choose available overpass/product/time and authenticate
+USDA Ag Data Commons,Dataset-dependent; U.S. emphasis,No dataset downloaded,Repository is not one uniform global dataset; select an applicable dataset first
+Web Soil Survey,United States only,Not downloaded,Regional resource; not a global default
+CropScape Cropland Data Layer,United States only,Not downloaded,Regional resource; not a global default
+PRISM Climate Data,United States only,Not downloaded,Regional resource; not a global default
+SSURGO / STATSGO2,United States only,Not downloaded,Regional resource; not a global default
+NAIP,United States only,Not downloaded,Regional resource; not a global default
+USGS NLCD,United States only,Not downloaded,Regional resource; not a global default
+NLDAS / GLDAS,GLDAS global; NLDAS North America,No gridded data file downloaded,Select GLDAS product/version/date; NASA Earthdata access and spatial-temporal subsetting needed
+FAO GAEZ,Global with generalized suitability,No raster package downloaded,Select the GAEZ version and variables; full global grids are large and portal/product selection is required
+CoCoRaHS,United States / Canada,Not downloaded,Regional observation network; not a global default
+USGS NWIS,United States only,Not downloaded,Regional observation network; not a global default
+USDA AMS Market News,United States markets,Not downloaded,Regional market source; not a global default
+USDA NASS QuickStats,United States only,Not downloaded,Regional statistics; not a global default
+OpenET,Western United States,Not downloaded,Regional ET service; not a global default
+USFS LANDFIRE,United States only,Not downloaded,Regional resource; not a global default
+GEDI,Near-global sampled footprints,No granule downloaded,Select product/time/area and authenticated access; footprint data are not wall-to-wall
+Copernicus Sentinel-2,Global land coverage,No scene downloaded,Scene selection and Copernicus access are required; data volume varies with area/time
+ERA5 ECMWF Reanalysis,Global climate reanalysis,No file downloaded,Select variables/area/time and use CDS access credentials; a full global archive is too large

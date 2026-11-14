@@ -1,3 +1,6 @@
+"use client";
+import {useEffect,useState} from "react";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 const nasa=[
  ["SMAP","https://earthdata.nasa.gov/data/platforms/space-based-platforms/smap","Global; coarse pixels"],
  ["GPM / IMERG","https://gpm.nasa.gov/data","Near-global; product/data gaps"],
@@ -16,7 +19,10 @@ const other=[
 const esa=[["Copernicus Sentinel-2","https://dataspace.copernicus.eu/","Global land coverage"],["ERA5 ECMWF Reanalysis","https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview","Global climate reanalysis"]];
 function LinkList({items}){return <ul>{items.map(([name,url,scope])=><li key={name}><a href={url} target="_blank" rel="noreferrer">{name}</a>{scope&&<span style={{color:"#617268",fontSize:13}}> — {scope}</span>}</li>)}</ul>}
 
-export default function Sources(){return <main style={{maxWidth:980,margin:"48px auto",padding:24,fontFamily:"Arial,sans-serif",lineHeight:1.65,color:"#17261f"}}>
+export default function Sources(){
+  const [samples,setSamples]=useState(null);
+  useEffect(()=>{fetch(`${API}/resource-samples`).then(r=>r.ok?r.json():Promise.reject()).then(setSamples).catch(()=>setSamples({error:true}));},[]);
+  return <main style={{maxWidth:980,margin:"48px auto",padding:24,fontFamily:"Arial,sans-serif",lineHeight:1.65,color:"#17261f"}}>
   <a href="/">← Back to field overview</a><p style={{color:"#52734f",fontWeight:700,letterSpacing:".12em",fontSize:12,marginTop:30}}>DATA TRANSPARENCY</p><h1>Sources and evidence limits</h1>
   <p>The official Field Shift Resources tab lists 24 resource cards: 22 under “NASA Data & Resources” and 2 ESA partner resources. These are optional resources, not 24 mandatory integrations. The provider is identified for every entry.</p>
   <section style={{background:"#f1f6ec",padding:20,borderRadius:12,margin:"22px 0"}}><h2 style={{marginTop:0}}>NASA data currently connected</h2>
@@ -24,6 +30,11 @@ export default function Sources(){return <main style={{maxWidth:980,margin:"48px
     <p><b>NASA POWER Projection API:</b> monthly temperature and precipitation values from the multi-model ensemble for SSP1-2.6, SSP2-4.5, and SSP3-7.0. These are 0.25° climate scenarios, not field forecasts.</p>
     <p><b>NASA GIBS:</b> MODIS Terra/Aqua and Suomi NPP VIIRS true-color; Terra MODIS 8-day NDVI; GPM IMERG precipitation-rate; and SMAP L4 surface-soil-moisture visualizations for a selected region/date. These are rendered context maps, not numeric point observations or crop diagnoses.</p>
     <p><a href="https://power.larc.nasa.gov/docs/services/api/temporal/daily/" target="_blank" rel="noreferrer">NASA POWER daily API docs</a> · <a href="https://power.larc.nasa.gov/docs/services/api/projection/" target="_blank" rel="noreferrer">NASA POWER projection API docs</a> · <a href="https://nasa-gibs.github.io/gibs-api-docs/access-basics/" target="_blank" rel="noreferrer">NASA GIBS API docs</a></p>
+  </section>
+  <section style={{background:"#f7f8f4",padding:20,borderRadius:12,margin:"22px 0"}}><h2 style={{marginTop:0}}>Downloadable sample files in this project</h2>
+    <p>These are small, dated examples for inspection and prototyping. They are not complete archives and the sample imagery is for visual context, not field measurements.</p>
+    {samples?.files?.length>0?<ul>{samples.files.map(file=><li key={file.name}><a href={`${API}${file.url}`}>{file.name}</a> <span style={{color:"#617268",fontSize:13}}>— {(file.bytes/1024).toFixed(0)} KB</span></li>)}</ul>:samples?.error?<p>The sample download service is unavailable. The files remain in <code>data/resource_samples/</code> in the project.</p>:<p>Loading project sample list…</p>}
+    {samples?.retrieved_date&&<p style={{color:"#617268",fontSize:13}}>Retrieved {samples.retrieved_date}. Full dataset download and integration status is recorded in <code>data/resource_samples/resource_download_status.csv</code>.</p>}
   </section>
   <section><h2>How to read global coverage</h2><p><b>Global/near-global</b> means a resource may support a location-aware global product, subject to the selected product’s actual coverage, time range, resolution, access conditions, and gaps. It does not mean every place/date is covered or that a pixel measures a small field. Regional resources can still be enabled conditionally when a farmer’s location falls inside their coverage.</p></section>
   <section><h2>NASA resources listed by the challenge</h2><p>NASA POWER supplies numeric daily climate observations. NASA GIBS displays SMAP, GPM/IMERG, MODIS NDVI, MODIS, and VIIRS as rendered visualizations; it does not extract numeric values from those maps. Other entries below are globally relevant candidates where coverage allows, but are not currently connected. The current GIBS views are public and do not require Earthdata Login.</p><LinkList items={nasa}/></section>

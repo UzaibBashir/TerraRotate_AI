@@ -70,13 +70,13 @@
       "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=MODIS_Terra_CorrectedReflectance_TrueColor&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fjpeg&TIME=2026-11-11"
     },
     {
-      "file": "viirs_snpp_true_color_2026-11-11.jpg",
+      "file": "viirs_snpp_true_color_2026-11-02.jpg",
       "layer": "VIIRS_SNPP_CorrectedReflectance_TrueColor",
-      "date": "2026-11-11",
+      "date": "2026-11-02",
       "format": "image/jpeg",
-      "bytes": 9437,
+      "bytes": 226025,
       "scope": "global browse rendering; low-resolution visualization, not source pixels",
-      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=VIIRS_SNPP_CorrectedReflectance_TrueColor&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fjpeg&TIME=2026-11-11"
+      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=VIIRS_SNPP_CorrectedReflectance_TrueColor&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fjpeg&TIME=2026-11-02"
     },
     {
       "file": "modis_terra_ndvi_8day_2026-11-11.png",
@@ -97,13 +97,13 @@
       "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=IMERG_Precipitation_Rate&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fpng&TIME=2026-11-11"
     },
     {
-      "file": "smap_l4_surface_soil_moisture_2026-11-11.png",
+      "file": "smap_l4_surface_soil_moisture_2026-11-10.png",
       "layer": "SMAP_L4_Analyzed_Surface_Soil_Moisture",
-      "date": "2026-11-11",
+      "date": "2026-11-10",
       "format": "image/png",
-      "bytes": 6023,
+      "bytes": 521092,
       "scope": "global browse rendering; low-resolution visualization, not source pixels",
-      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=SMAP_L4_Analyzed_Surface_Soil_Moisture&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fpng&TIME=2026-11-11"
+      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=SMAP_L4_Analyzed_Surface_Soil_Moisture&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fpng&TIME=2026-11-10"
     }
   ]
 }

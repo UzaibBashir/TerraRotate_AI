@@ -8,7 +8,8 @@
 | Flask foundation | Tested | App factory, health endpoint, CORS, REST routes; covered by backend tests |
 | NASA POWER daily data | Implemented | Listed source; daily point request and attribution; backend tests cover parsing and missing values |
 | NASA POWER future climate scenarios | Implemented | Projection API monthly ensemble and three SSP pathways; live response unavailable from this environment |
-| NASA GIBS imagery: MODIS / VIIRS / MODIS NDVI / GPM IMERG / SMAP | Implemented | Backend WMS proxy for listed challenge datasets; image MIME type and source layer metadata are preserved; scientific raster layers are displayed only; live response unavailable from this environment |
+| NASA GIBS imagery: MODIS / VIIRS / MODIS NDVI / GPM IMERG / SMAP | Implemented | Backend WMS proxy and five visually checked global browse samples; scientific map layers are display-only; full source granules are not downloaded |
+| Global sample downloads | Implemented | NASA POWER daily CSV for six sample locations plus five global GIBS PNG/JPEG maps; per-file provenance in `data/resource_samples/download_manifest.json` |
 | Rotation baseline | Tested | Input validation, baseline plus two alternatives, explanations and caveats |
 | Next.js dashboard | Implemented | Location, crop, water and priority inputs; package install blocked by unavailable registry/cache, so build not verified |
 | Crop catalog | In progress | Broad starter classes; local expert validation needed |

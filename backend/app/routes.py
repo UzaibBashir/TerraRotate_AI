@@ -1,11 +1,47 @@
 from datetime import date, timedelta
 import math
-from flask import Blueprint, jsonify, request, Response
+import json
+from pathlib import Path
+from flask import Blueprint, jsonify, request, Response, send_from_directory, abort
 from .services.power import fetch_power_daily, fetch_power_projection, PowerError
 from .services.gibs import fetch_gibs_image, GIBSError
 from .services.rotation import recommend_rotations, CROPS
 
 api = Blueprint("api", __name__)
+SAMPLE_DIR = Path(__file__).resolve().parents[2] / "data" / "resource_samples"
+
+@api.get("/resource-samples")
+def resource_samples():
+    """List the small, dated sample assets bundled with the project."""
+    manifest_path = SAMPLE_DIR / "download_manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return jsonify({"error": "The sample manifest is unavailable"}), 503
+    names = []
+    power_file = manifest.get("power", {}).get("file")
+    if power_file:
+        names.append(power_file)
+    names.extend(item["file"] for item in manifest.get("gibs", []) if item.get("file"))
+    files = [{"name": name, "url": f"/api/resource-samples/{name}", "bytes": (SAMPLE_DIR / name).stat().st_size}
+             for name in names if (SAMPLE_DIR / name).is_file()]
+    return jsonify({"retrieved_date": manifest.get("retrieved_date"), "note": manifest.get("note"), "files": files})
+
+@api.get("/resource-samples/<path:filename>")
+def download_resource_sample(filename):
+    """Serve only assets explicitly listed in the generated sample manifest."""
+    manifest_path = SAMPLE_DIR / "download_manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return jsonify({"error": "The sample manifest is unavailable"}), 503
+    names = {manifest.get("power", {}).get("file")}
+    names.update(item.get("file") for item in manifest.get("gibs", []))
+    if filename not in names or not filename or Path(filename).name != filename:
+        abort(404)
+    if not (SAMPLE_DIR / filename).is_file():
+        abort(404)
+    return send_from_directory(SAMPLE_DIR, filename, as_attachment=True, download_name=filename)
 
 @api.get("/catalog")
 def catalog(): return jsonify({"crops": list(CROPS.values())})
