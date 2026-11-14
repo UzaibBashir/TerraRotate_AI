@@ -7,6 +7,7 @@ LAYERS = {
     "modis_terra": {"id":"MODIS_Terra_CorrectedReflectance_TrueColor","label":"Terra MODIS Corrected Reflectance (True Color)","resolution":"250 m visualization layer"},
     "modis_aqua": {"id":"MODIS_Aqua_CorrectedReflectance_TrueColor","label":"Aqua MODIS Corrected Reflectance (True Color)","resolution":"250 m visualization layer"},
     "viirs_snpp": {"id":"VIIRS_SNPP_CorrectedReflectance_TrueColor","label":"Suomi NPP VIIRS Corrected Reflectance (True Color)","resolution":"500 m visualization layer"},
+    "modis_ndvi": {"id":"MODIS_Terra_NDVI_8Day","label":"Terra MODIS 8-day NDVI","resolution":"product grid; see NASA layer metadata"},
     "imerg_precipitation": {"id":"IMERG_Precipitation_Rate","label":"GPM IMERG precipitation rate","resolution":"0.1 degree source grid; daily browse visualization"},
     "smap_surface_moisture": {"id":"SMAP_L4_Analyzed_Surface_Soil_Moisture","label":"SMAP L4 analyzed surface soil moisture","resolution":"9 km source product; browse visualization"},
 }

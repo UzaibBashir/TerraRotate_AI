@@ -1,0 +1,109 @@
+{
+  "retrieved_date": "2026-11-14",
+  "note": "Small public samples only. These are not complete mission archives and are not automatically used as production inputs.",
+  "power": {
+    "file": "nasa_power_daily_global_sites.csv",
+    "rows": 66,
+    "period": {
+      "start": "2026-11-01",
+      "end": "2026-11-11"
+    },
+    "sites": {
+      "Kashmir_demo": {
+        "coordinates": [
+          33.7311,
+          75.148
+        ],
+        "days_returned": 11,
+        "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CPRECTOTCORR&community=AG&longitude=75.1480&latitude=33.7311&start=20261101&end=20261111&format=JSON&time-standard=UTC"
+      },
+      "Nairobi_demo": {
+        "coordinates": [
+          -1.2921,
+          36.8219
+        ],
+        "days_returned": 11,
+        "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CPRECTOTCORR&community=AG&longitude=36.8219&latitude=-1.2921&start=20261101&end=20261111&format=JSON&time-standard=UTC"
+      },
+      "Sao_Paulo_demo": {
+        "coordinates": [
+          -23.5505,
+          -46.6333
+        ],
+        "days_returned": 11,
+        "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CPRECTOTCORR&community=AG&longitude=-46.6333&latitude=-23.5505&start=20261101&end=20261111&format=JSON&time-standard=UTC"
+      },
+      "Cairo_demo": {
+        "coordinates": [
+          30.0444,
+          31.2357
+        ],
+        "days_returned": 11,
+        "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CPRECTOTCORR&community=AG&longitude=31.2357&latitude=30.0444&start=20261101&end=20261111&format=JSON&time-standard=UTC"
+      },
+      "Los_Angeles_demo": {
+        "coordinates": [
+          34.0522,
+          -118.2437
+        ],
+        "days_returned": 11,
+        "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CPRECTOTCORR&community=AG&longitude=-118.2437&latitude=34.0522&start=20261101&end=20261111&format=JSON&time-standard=UTC"
+      },
+      "Tokyo_demo": {
+        "coordinates": [
+          35.6762,
+          139.6503
+        ],
+        "days_returned": 11,
+        "url": "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M%2CPRECTOTCORR&community=AG&longitude=139.6503&latitude=35.6762&start=20261101&end=20261111&format=JSON&time-standard=UTC"
+      }
+    }
+  },
+  "gibs": [
+    {
+      "file": "modis_terra_true_color_2026-11-11.jpg",
+      "layer": "MODIS_Terra_CorrectedReflectance_TrueColor",
+      "date": "2026-11-11",
+      "format": "image/jpeg",
+      "bytes": 432747,
+      "scope": "global browse rendering; low-resolution visualization, not source pixels",
+      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=MODIS_Terra_CorrectedReflectance_TrueColor&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fjpeg&TIME=2026-11-11"
+    },
+    {
+      "file": "viirs_snpp_true_color_2026-11-11.jpg",
+      "layer": "VIIRS_SNPP_CorrectedReflectance_TrueColor",
+      "date": "2026-11-11",
+      "format": "image/jpeg",
+      "bytes": 9437,
+      "scope": "global browse rendering; low-resolution visualization, not source pixels",
+      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=VIIRS_SNPP_CorrectedReflectance_TrueColor&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fjpeg&TIME=2026-11-11"
+    },
+    {
+      "file": "modis_terra_ndvi_8day_2026-11-11.png",
+      "layer": "MODIS_Terra_NDVI_8Day",
+      "date": "2026-11-11",
+      "format": "image/png",
+      "bytes": 471412,
+      "scope": "global browse rendering; low-resolution visualization, not source pixels",
+      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=MODIS_Terra_NDVI_8Day&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fpng&TIME=2026-11-11"
+    },
+    {
+      "file": "imerg_precipitation_rate_2026-11-11.png",
+      "layer": "IMERG_Precipitation_Rate",
+      "date": "2026-11-11",
+      "format": "image/png",
+      "bytes": 355058,
+      "scope": "global browse rendering; low-resolution visualization, not source pixels",
+      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=IMERG_Precipitation_Rate&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fpng&TIME=2026-11-11"
+    },
+    {
+      "file": "smap_l4_surface_soil_moisture_2026-11-11.png",
+      "layer": "SMAP_L4_Analyzed_Surface_Soil_Moisture",
+      "date": "2026-11-11",
+      "format": "image/png",
+      "bytes": 6023,
+      "scope": "global browse rendering; low-resolution visualization, not source pixels",
+      "url": "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=SMAP_L4_Analyzed_Surface_Soil_Moisture&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-85%2C180%2C85&WIDTH=1800&HEIGHT=850&FORMAT=image%2Fpng&TIME=2026-11-11"
+    }
+  ]
+}
