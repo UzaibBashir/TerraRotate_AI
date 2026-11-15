@@ -197,6 +197,22 @@ a { color: var(--green); }
 .about-process b { color: var(--green); font-size: 14px; }
 .about-process p { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
 .about-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.team-section { background: linear-gradient(135deg, #fff, #f1f7ed); }
+.project-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 22px 0 26px; }
+.project-details > div { display: grid; gap: 4px; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: #ffffffb8; }
+.project-details span { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.project-details b, .project-details a { overflow-wrap: anywhere; font-size: 14px; }
+.repository-link { display: inline-flex; align-items: center; gap: 7px; }
+.repository-link svg { width: 18px; height: 18px; flex: 0 0 18px; fill: currentColor; }
+.team-heading { margin: 0 0 14px; font-size: 18px; }
+.member-list { display: grid; gap: 10px; }
+.member-card { display: grid; grid-template-columns: 76px 1fr; gap: 14px; align-items: center; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #ffffffb8; }
+.member-card[href] { color: inherit; text-decoration: none; }
+.member-card[href]:hover .member-photo { border-color: var(--green); background: #dcebd7; }
+.member-card > b { font-size: 14px; line-height: 1.35; }
+.member-photo { display: grid; min-height: 62px; align-content: center; justify-items: center; gap: 3px; border: 1px dashed #9bb19c; border-radius: 9px; background: #e8f0e5; color: var(--green); text-align: center; }
+.member-photo span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: var(--green); color: white; font-size: 13px; font-weight: 800; }
+.member-photo small { color: var(--muted); font-size: 10px; }
 .team-list { display: grid; gap: 12px; margin-top: 20px; }
 .team-list > div { display: grid; grid-template-columns: 72px 1fr; gap: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .team-list b { color: var(--green); }
@@ -277,6 +293,7 @@ main:not(.shell) table { border: 1px solid var(--line); border-radius: 10px; ove
   .grid { grid-template-columns: 1fr; gap: 14px; }
   .about-intro, .about-split { grid-template-columns: 1fr; gap: 14px; }
   .about-grid, .about-process { grid-template-columns: 1fr; gap: 14px; }
+  .project-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .map-explanation { grid-template-columns: 1fr; }
   .report-grid { grid-template-columns: 1fr; }
   .visual-analysis-head { align-items: stretch; flex-direction: column; }

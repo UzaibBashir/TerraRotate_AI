@@ -15,6 +15,15 @@ const teamWork = [
   ["Build", "We connect the Next.js interface, Flask API and research tools into a practical prototype that keeps uncertainty visible."],
 ];
 
+const teamMembers = [
+  "Uzaib Bashir Malik",
+  "Raeel Nazir",
+  "Hanan Parray",
+  "Falak Fida",
+  "Adeeb Sajad",
+  "Farzana",
+];
+
 const featureGuide = [
   ["Field overview", "The home page is the main workflow. Enter a field name, coordinates, current crop, water availability and planning priority. Load one of the sample regions to see the experience immediately, or save your own field in this browser. The optional boundary tools accept GeoJSON or coordinates copied from Google Maps and estimate the area."],
   ["Climate and rotation report", "Run the field analysis to retrieve NASA POWER daily temperature and precipitation context. The report compares transparent three-season crop rotations, explains the strongest trade-offs and shows the values and coverage used. Treat the ranking as a conversation starter, not a guaranteed harvest forecast."],
@@ -101,14 +110,27 @@ export default function About() {
         </details>)}</div>
       </section>
 
+      <section className="card about-section team-section">
+        <span className="tag">OUR TEAM</span>
+        <h2>al-Uzma</h2>
+        <p className="sub">Learn · Teach · Build</p>
+        <p>We are a team bringing together research, communication and software building to explore how open Earth-observation resources can support more thoughtful farm planning. We designed TerraRotate as a learning prototype: useful enough to explore, but careful enough to show where evidence ends.</p>
+        <div className="project-details">
+          <div><span>Project</span><b>TerraRotate AI</b></div>
+          <div><span>GitHub repository</span><a className="repository-link" href="https://github.com/UzaibBashir/TerraRotate_AI" target="_blank" rel="noreferrer" aria-label="Open TerraRotate AI GitHub repository"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.09 1.83 1.23 1.83 1.23 1.07 1.83 2.8 1.3 3.48 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.29-1.23 3.29-1.23.65 1.65.24 2.87.12 3.17.77.84 1.23 1.91 1.23 3.22 0 4.6-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12 12 0 0 0 12 .5Z"/></svg><span>UzaibBashir/TerraRotate_AI</span></a></div>
+          <div><span>Deployed application</span><a href="https://terra-rotate-ai.vercel.app/" target="_blank" rel="noreferrer">terra-rotate-ai.vercel.app ↗</a></div>
+        </div>
+        <h3 className="team-heading">Team members</h3>
+        <div className="member-list">{teamMembers.map(name => {
+          const member = <><div className="member-photo" aria-label={`Photo placeholder for ${name}`}><span>{name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}</span><small>Photo placeholder</small></div><b>{name}</b></>;
+          return name === "Uzaib Bashir Malik"
+            ? <a className="member-card" key={name} href="https://github.com/UzaibBashir" target="_blank" rel="noreferrer">{member}</a>
+            : <article className="member-card" key={name}>{member}</article>;
+        })}</div>
+        <div className="team-list">{teamWork.map(([title, text]) => <div key={title}><b>{title}</b><span>{text}</span></div>)}</div>
+      </section>
+
       <section className="about-split">
-        <article className="card about-section">
-          <span className="tag">OUR TEAM</span>
-          <h2>al-Uzma</h2>
-          <p className="sub">Learn · Teach · Build</p>
-          <p>We are a team bringing together research, communication and software building to explore how open Earth-observation resources can support more thoughtful farm planning. We designed TerraRotate as a learning prototype: useful enough to explore, but careful enough to show where evidence ends.</p>
-          <div className="team-list">{teamWork.map(([title, text]) => <div key={title}><b>{title}</b><span>{text}</span></div>)}</div>
-        </article>
         <article className="card about-section">
           <span className="tag">WHAT WE BELIEVE</span>
           <h2>Useful does not have to mean overconfident.</h2>
