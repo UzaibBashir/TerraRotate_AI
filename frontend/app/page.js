@@ -13,6 +13,15 @@ const MAP_GUIDES = {
   imerg_precipitation:{label:"Rainfall estimate · GPM IMERG",description:"This layer shows estimated rainfall rate from satellite observations around the selected date. It is useful for seeing regional rain patterns.",reading:"Rainfall rate is not the same as total rain received by your field. Check local rain gauges or weather records for farm decisions; the map may be coarse or have gaps."},
   smap_surface_moisture:{label:"Surface moisture estimate · SMAP",description:"This layer estimates moisture in the upper soil across a broad area. It can give background context about wetter or drier conditions around your location.",reading:"The map covers areas much larger than a typical field and is not a soil test or a sensor reading from your land. Do not use its colors to judge the moisture of one field."}
 };
+const IMAGE_METADATA = {
+  modis_terra:{id:"MODIS_Terra_CorrectedReflectance_TrueColor",product:"Terra MODIS Corrected Reflectance (True Color)",resolution:"250 m visualization layer",cadence:"Daily corrected-reflectance browse image; cloud and coverage vary by date"},
+  modis_aqua:{id:"MODIS_Aqua_CorrectedReflectance_TrueColor",product:"Aqua MODIS Corrected Reflectance (True Color)",resolution:"250 m visualization layer",cadence:"Daily corrected-reflectance browse image; cloud and coverage vary by date"},
+  viirs_snpp:{id:"VIIRS_SNPP_CorrectedReflectance_TrueColor",product:"Suomi NPP VIIRS Corrected Reflectance (True Color)",resolution:"500 m visualization layer",cadence:"Daily corrected-reflectance browse image; cloud and coverage vary by date"},
+  modis_ndvi:{id:"MODIS_Terra_NDVI_8Day",product:"Terra MODIS 8-day NDVI",resolution:"Product grid; see NASA layer metadata",cadence:"8-day vegetation-index composite"},
+  viirs_ndvi:{id:"VIIRS_SNPP_NDVI_8Day",product:"Suomi NPP VIIRS 8-day NDVI",resolution:"500 m-class global product grid; browse image only",cadence:"8-day composite; select a composite date"},
+  imerg_precipitation:{id:"IMERG_Precipitation_Rate",product:"GPM IMERG precipitation rate",resolution:"0.1 degree source grid; daily browse visualization",cadence:"Date-specific precipitation-rate browse image; product accumulation period may differ"},
+  smap_surface_moisture:{id:"SMAP_L4_Analyzed_Surface_Soil_Moisture",product:"SMAP L4 analyzed surface soil moisture",resolution:"9 km source product; browse visualization",cadence:"Date-specific browse image; temporal coverage can vary by product"}
+};
 const DEMO_FIELDS = [
   {id:"demo-iowa",name:"Demo field · Iowa, USA",latitude:42.0300,longitude:-93.6200,current_crop:"maize",water_availability:"abundant",priority:"balanced",soil_texture:"Loam",soil_ph:"6.5",organic_matter:"3.0",boundary_geojson:{type:"Polygon",coordinates:[[[-93.626,42.027],[-93.614,42.027],[-93.614,42.033],[-93.626,42.033],[-93.626,42.027]]]}},
   {id:"demo-beauce",name:"Demo field · Beauce, France",latitude:48.2000,longitude:1.6000,current_crop:"wheat",water_availability:"limited",priority:"water",soil_texture:"Silty loam",soil_ph:"7.1",organic_matter:"2.0",boundary_geojson:{type:"Polygon",coordinates:[[[1.594,48.197],[1.606,48.197],[1.606,48.203],[1.594,48.203],[1.594,48.197]]]}},
@@ -35,9 +44,45 @@ function coordinatesFromGoogleMaps(value) {
 }
 
 async function readJson(response, fallback) {
-  const value = await response.json();
+  const body = await response.text();
+  let value;
+  try { value = JSON.parse(body); }
+  catch {
+    const error = new Error(`The API returned a web page instead of report data (HTTP ${response.status}).`);
+    error.isHtmlResponse = /^\s*(<!doctype\s+html|<html)/i.test(body) || response.headers.get("content-type")?.includes("text/html");
+    throw error;
+  }
   if (!response.ok) throw new Error(value.error || fallback);
   return value;
+}
+
+function blobAsBase64(blob) {
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||"");
+    reader.onerror=()=>reject(new Error("Could not prepare this image for explanation."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function fallbackImageReport({lat,lon,layer,date,zoom,climate}) {
+  const meta=IMAGE_METADATA[layer]||IMAGE_METADATA.modis_terra;
+  const pointLat=Number(lat),pointLon=Number(lon),bounds=getMapBounds(pointLat,pointLon,zoom);
+  const row=climate?.rows?.find(item=>String(item.date).replaceAll("-","")===date.replaceAll("-",""));
+  const dailyValues=[
+    ["T2M","Mean air temperature",row?.temperature_c,"°C"],
+    ["PRECTOTCORR","Daily precipitation",row?.precipitation_mm_day,"mm/day"],
+    ["SFMC","Surface soil moisture",null,"m³/m³"],
+    ["RZMC","Root-zone soil moisture",null,"m³/m³"],
+    ["EVPTRNS","Evapotranspiration energy",null,"MJ/m²/day"]
+  ];
+  return {
+    image:{provider:"NASA Global Imagery Browse Services (GIBS)",layer_key:layer,product:meta.product,layer_id:meta.id,nominal_resolution:meta.resolution,cadence:meta.cadence,date,zoom,
+      coordinates:{latitude:pointLat,longitude:pointLon},bounds,image_dimensions:{width:900,height:600},pixel_values_available:false,
+      pixel_values_note:"This is a rendered browse image. The hosted report service is not yet available, so raw pixel science values cannot be extracted from this picture."},
+    readings:dailyValues.map(([parameter,label,value,unit])=>({parameter,label,value:value??null,unit,status:value==null?"unavailable":"available",source:"NASA POWER"})),
+    reading_note:row?"Temperature and rainfall are separate NASA POWER daily estimates for this date and the nearest grid point. Moisture and evapotranspiration values need the updated report service. None of these values are read from image colors.":"The currently available climate endpoint does not include this image date. Numeric readings are shown as unavailable rather than estimated."
+  };
 }
 
 export default function Home() {
@@ -55,11 +100,14 @@ export default function Home() {
   const [imageUrl,setImageUrl]=useState(""), [imageError,setImageError]=useState("");
   const [availableDates,setAvailableDates]=useState([]), [datesBusy,setDatesBusy]=useState(true);
   const [imageryBusy,setImageryBusy]=useState(false);
+  const [imageAnalysisAvailable,setImageAnalysisAvailable]=useState(null), [imageAnalysisBusy,setImageAnalysisBusy]=useState(false);
+  const [imageDescription,setImageDescription]=useState(""), [imageDescriptionError,setImageDescriptionError]=useState(""), [imageDescriptionCaution,setImageDescriptionCaution]=useState("");
   const [imageReport,setImageReport]=useState(null), [reportBusy,setReportBusy]=useState(false), [reportError,setReportError]=useState("");
   const [legendUrl,setLegendUrl]=useState(""), [legendError,setLegendError]=useState(false);
   const [projection,setProjection]=useState(null), [projectionError,setProjectionError]=useState(""), [projectionBusy,setProjectionBusy]=useState(false);
 
   useEffect(()=>{try{setSavedFields(JSON.parse(localStorage.getItem("terrarotate_fields")||"[]"));}catch{setSavedFields([]);}},[]);
+  useEffect(()=>{fetch(`${API}/intelligence/image-description/status`).then(r=>readJson(r,"Image explanation service unavailable")).then(data=>setImageAnalysisAvailable(Boolean(data.available))).catch(()=>setImageAnalysisAvailable(false));},[]);
   useEffect(()=>{
     let cancelled=false;
     setDatesBusy(true);setAvailableDates([]);setImageUrl("");setImageError("");setImageryBusy(true);
@@ -74,13 +122,21 @@ export default function Home() {
   },[layer]);
 
   useEffect(()=>{
-    if(!imageUrl){setImageReport(null);setReportError("");return;}
+    if(!imageUrl){setImageReport(null);setReportError("");setImageDescription("");setImageDescriptionError("");setImageDescriptionCaution("");return;}
     let cancelled=false;
     setReportBusy(true);setReportError("");
     const query=new URLSearchParams({lat,lon,layer,date:imageDate,zoom:String(zoom)});
     fetch(`${API}/imagery/report?${query}`).then(r=>readJson(r,"Image details are unavailable")).then(data=>{
       if(!cancelled)setImageReport(data);
-    }).catch(error=>{if(!cancelled)setReportError(error.message);}).finally(()=>{if(!cancelled)setReportBusy(false);});
+    }).catch(async error=>{
+      if(cancelled)return;
+      if(error.isHtmlResponse){
+        try{
+          const climateData=await readJson(await fetch(`${API}/climate?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`),"Existing climate data is unavailable");
+          if(!cancelled)setImageReport({...fallbackImageReport({lat,lon,layer,date:imageDate,zoom,climate:climateData}),report_notice:"The hosted report endpoint is not updated yet. Showing image details and any matching temperature and rainfall readings available from the existing climate service."});
+        }catch(fallbackError){if(!cancelled)setReportError(fallbackError.message);}
+      }else if(!cancelled)setReportError(error.message);
+    }).finally(()=>{if(!cancelled)setReportBusy(false);});
     return ()=>{cancelled=true;};
   },[imageUrl]);
 
@@ -173,9 +229,25 @@ export default function Home() {
   }
 
   function loadImagery() {
-    setImageError("");setImageryBusy(true);
+    setImageError("");setImageryBusy(true);setImageDescription("");setImageDescriptionError("");
     setImageUrl(`${API}/imagery?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&layer=${encodeURIComponent(layer)}&date=${encodeURIComponent(imageDate)}&zoom=${zoom}`);
     setLegendError(false);setLegendUrl(`${API}/imagery/legend?layer=${encodeURIComponent(layer)}`);
+  }
+
+  async function explainImage() {
+    if(!imageUrl)return;
+    setImageAnalysisBusy(true);setImageDescriptionError("");setImageDescription("");
+    try{
+      const imageResponse=await fetch(imageUrl);
+      if(!imageResponse.ok)throw new Error("The satellite image could not be loaded for explanation.");
+      const imageBlob=await imageResponse.blob();
+      const image_data=await blobAsBase64(imageBlob);
+      const context=`${mapGuide.label}; NASA layer ${layer}; date ${imageDate}; field ${fieldName}; location ${lat}, ${lon}; ${mapGuide.description}`;
+      const data=await readJson(await fetch(`${API}/intelligence/image-description`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image_data,mime_type:imageBlob.type||"image/png",image_kind:"nasa_satellite",context})}),"Image explanation unavailable");
+      setImageDescription(data.description||"");
+      setImageDescriptionCaution(data.caution||"");
+    }catch(error){setImageDescriptionError(error.message||"Could not explain this image.");}
+    finally{setImageAnalysisBusy(false);}
   }
 
   async function loadProjection() {
@@ -247,10 +319,17 @@ export default function Home() {
           <span className="map-attribution">NASA GIBS · {bounds.south.toFixed(2)} to {bounds.north.toFixed(2)}° lat</span>
         </div>{legendUrl&&<div className="map-legend"><b>NASA product legend</b>{!legendError?<img src={legendUrl} alt={`${layer} official NASA GIBS layer legend`} onError={()=>setLegendError(true)}/>:<span>GIBS did not return a separate legend for this layer. Color is product-specific; do not read it as a field measurement.</span>}</div>}<p className="status">Selected point: {Number.isFinite(centerLat)?centerLat.toFixed(5):"—"}, {Number.isFinite(centerLon)?centerLon.toFixed(5):"—"} · illustrative until you register a real field.</p>
           <div className="map-explanation" aria-live="polite"><div><span className="tag">{mapGuide.label}</span><h3>What this image shows</h3><p>{mapGuide.description}</p></div><div className="map-reading"><b>How to read it</b><p>{mapGuide.reading}</p><p className="status">This is regional context. It is not a measurement from inside your field, and it does not diagnose crop health.</p></div></div>
-          <div className="image-report" aria-live="polite">
+                    <section className="visual-analysis" aria-live="polite">
+            <div className="visual-analysis-head"><div><h3>Explain this satellite image</h3><p className="sub">Get a plain-language description of visible patterns in this map.</p></div><button className="btn" type="button" onClick={explainImage} disabled={!imageUrl||imageAnalysisAvailable!==true||imageAnalysisBusy}>{imageAnalysisBusy?"Explaining image…":"Explain this image"}</button></div>
+            {imageAnalysisAvailable===false&&<p className="status">Image explanation is not enabled on the connected server yet.</p>}
+            {imageAnalysisAvailable===null&&<p className="status">Checking image explanation availability…</p>}
+            {imageDescriptionError&&<p className="error" role="alert">{imageDescriptionError}</p>}
+            {imageDescription&&<div className="visual-description"><b>What the image appears to show</b><p>{imageDescription}</p>{imageDescriptionCaution&&<small>{imageDescriptionCaution}</small>}</div>}
+          </section><div className="image-report" aria-live="polite">
             {reportBusy&&<p className="status">Reading image details and checking available measurements…</p>}
             {reportError&&<p className="error" role="alert">{reportError}</p>}
             {imageReport&&<>
+              {imageReport.report_notice&&<div className="banner">{imageReport.report_notice}</div>}
               <section className="report-section"><h3>Details from this image</h3><dl className="report-grid">
                 <div><dt>Source</dt><dd>{imageReport.image.provider}</dd></div><div><dt>Satellite layer</dt><dd>{imageReport.image.product}</dd></div>
                 <div><dt>Product code</dt><dd>{imageReport.image.layer_id}</dd></div>

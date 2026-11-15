@@ -9,8 +9,24 @@ from .services.gibs import fetch_gibs_image, fetch_gibs_legend, fetch_gibs_avail
 from .services.rotation import recommend_rotations, CROPS
 from .services.intelligence import vegetation, bare_windows, water_budget, historical_climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 from .services.yield_model import model_status, model_options, predict_national_yield, YieldModelError
+from .services.image_analysis import describe_image, vision_available
 
 api = Blueprint("api", __name__)
+
+@api.get("/intelligence/image-description/status")
+def image_description_status():
+    return jsonify({"available": vision_available()})
+
+@api.post("/intelligence/image-description")
+def image_description():
+    if request.content_length and request.content_length > 7 * 1024 * 1024:
+        return jsonify({"error":"Images must be smaller than 5 MB."}),413
+    body=request.get_json(silent=True)
+    if not isinstance(body,dict): return jsonify({"error":"Select an image to describe."}),400
+    try:
+        return jsonify(describe_image(body.get("image_data"),body.get("mime_type"),body.get("image_kind"),body.get("context")))
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+    except RuntimeError as exc: return jsonify({"error":str(exc)}),503
 
 @api.get("/model/yield/status")
 def yield_model_status():

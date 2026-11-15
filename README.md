@@ -61,6 +61,8 @@ The experimental model artifact is included under `backend/app/data/`. To retrai
 
 The farmer-feedback tool works in browser-local mode by default. To enable optional Supabase account sync, create `frontend/.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from your own project, apply `database/schema.sql`, restart Next.js, and use the sign-in controls on `/tools`. The schema uses row-level security; never put a Supabase service-role key in the browser. Supabase is not connected to a live project yet. Public hosting and competition submission are not configured.
 
+Image descriptions on `/tools` support uploaded farm photos and NASA GIBS map images. To enable them, set `OPENAI_API_KEY` in the **backend service environment** (never as a `NEXT_PUBLIC_` variable); optionally set `OPENAI_VISION_MODEL` to a vision-capable model available to your account. The page sends an image only after the user presses “Describe image,” and shows a notice before upload. The selected NASA layer/date/location is retrieved from NASA GIBS first; the rendered map is described as regional visual context, not decoded into measurements.
+
 ## Documentation
 
 Read `docs/implementation_status.md`, `docs/nasa_resource_allowlist.md`, `docs/data_sources.md`, `docs/data_provenance.md`, `docs/methodology.md`, `docs/model_evaluation.md`, `docs/submission_content.md`, and `docs/limitations.md`.
