@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from flask import Blueprint, jsonify, request, Response, send_from_directory, abort
 from .services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, fetch_power_monthly_profile, PowerError
-from .services.gibs import fetch_gibs_image, fetch_gibs_legend, fetch_gibs_available_dates, GIBSError
+from .services.gibs import fetch_gibs_image, fetch_gibs_legend, fetch_gibs_available_dates, image_report_metadata, GIBSError
 from .services.rotation import recommend_rotations, CROPS
 from .services.intelligence import vegetation, bare_windows, water_budget, historical_climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 from .services.yield_model import model_status, model_options, predict_national_yield, YieldModelError
@@ -123,6 +123,51 @@ def imagery_dates():
     try: return jsonify({"layer":layer,"dates":fetch_gibs_available_dates(layer)})
     except ValueError as exc: return jsonify({"error":str(exc)}),400
     except GIBSError as exc: return jsonify({"error":str(exc),"source":"NASA GIBS"}),502
+
+@api.get("/imagery/report")
+def imagery_report():
+    """Return image provenance plus numeric NASA POWER point context for the image date."""
+    try:
+        lat,lon=float(request.args.get("lat","")),float(request.args.get("lon",""))
+        day=date.fromisoformat(request.args.get("date",""))
+        layer=request.args.get("layer","modis_terra")
+        zoom=int(request.args.get("zoom","1"))
+    except ValueError:
+        return jsonify({"error":"Provide valid coordinates, an ISO date, and a map zoom"}),400
+    if not (math.isfinite(lat) and math.isfinite(lon) and -90<=lat<=90 and -180<=lon<=180):
+        return jsonify({"error":"Coordinates are outside valid ranges"}),400
+    if day>date.today(): return jsonify({"error":"Image date cannot be in the future"}),400
+    try:
+        image=image_report_metadata(layer,day,lat,lon,zoom)
+    except ValueError as exc:
+        return jsonify({"error":str(exc)}),400
+
+    readings=[]
+    errors=[]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        daily_future=pool.submit(fetch_power_daily,lat,lon,day,day)
+        water_future=pool.submit(fetch_power_water,lat,lon,day,day)
+        for future,definitions in (
+            (daily_future,[("T2M","Mean air temperature","°C"),("PRECTOTCORR","Daily precipitation","mm/day")]),
+            (water_future,[("SFMC","Surface soil moisture","m³/m³"),("RZMC","Root-zone soil moisture","m³/m³"),("EVPTRNS","Evapotranspiration energy","MJ/m²/day")]),
+        ):
+            try:
+                rows=future.result().get("rows",[])
+                row=rows[0] if rows else {}
+                for key,label,unit in definitions:
+                    value=row.get(key.lower() if key!="T2M" and key!="PRECTOTCORR" else {"T2M":"temperature_c","PRECTOTCORR":"precipitation_mm_day"}[key])
+                    provenance=(row.get("provenance") or [])
+                    provenance=next((item for item in provenance if item.get("variable")==key),None) if isinstance(provenance,list) else None
+                    readings.append({"parameter":key,"label":label,"value":value,"unit":unit,
+                                     "status":"available" if value is not None else "missing",
+                                     "spatial_resolution":provenance.get("spatial_resolution") if provenance else None,
+                                     "source":"NASA POWER"})
+            except PowerError as exc:
+                errors.append(str(exc))
+                for key,label,unit in definitions:
+                    readings.append({"parameter":key,"label":label,"value":None,"unit":unit,"status":"unavailable","source":"NASA POWER"})
+    return jsonify({"image":image,"readings":readings,"readings_errors":errors,
+                    "reading_note":"NASA POWER values are separate, nearest-grid point estimates for the selected date. They are not extracted from the rendered NASA GIBS image and may use different native grid sizes."})
 
 @api.get("/imagery/legend")
 def imagery_legend():

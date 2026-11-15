@@ -5,19 +5,28 @@ const API = process.env.NEXT_PUBLIC_API_URL || "https://terrarotate-api.onrender
 
 export default function ModelPage() {
   const [options, setOptions] = useState(null), [country, setCountry] = useState(""), [crop, setCrop] = useState(""), [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [result, setResult] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  useEffect(() => {
-    Promise.all([
-      fetch(`${API}/model/yield/options`).then(async r => { const d=await r.json(); if(!r.ok) throw Error(d.error||"Model data unavailable"); return d; }),
-      fetch(`${API}/model/yield/status`).then(r=>r.json()),
-    ]).then(([opts,status])=>{
+  async function loadModelOptions() {
+    setLoading(true); setError("");
+    try {
+      const [optionsResponse, statusResponse] = await Promise.all([
+        fetch(`${API}/model/yield/options`),
+        fetch(`${API}/model/yield/status`),
+      ]);
+      const opts = await optionsResponse.json();
+      if (!optionsResponse.ok) throw Error(opts.error || "Model data unavailable");
+      const status = await statusResponse.json();
       setOptions(opts); setMetrics(status.metrics);
       const india=opts.countries.find(x=>x.name==="India")||opts.countries[0];
-      setCountry(india?.code||"");
       const rice=opts.crops.find(x=>x.name.toLowerCase().includes("rice"));
-      setCrop(rice?.code||opts.crops[0]?.code||"");
-    }).catch(e=>setError(e.message));
-  }, []);
+      setCountry(current => current || india?.code || "");
+      setCrop(current => current || rice?.code || opts.crops[0]?.code || "");
+    } catch(e) {
+      setError(`${e.message}. Check that the API is running, then retry.`);
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { loadModelOptions(); }, []);
   const availableCrops = options?.crops.filter(x => options.crop_codes_by_country?.[country]?.includes(x.code)) || [];
   async function estimate(e) {
     e.preventDefault(); setBusy(true); setError(""); setResult(null);
@@ -35,10 +44,11 @@ export default function ModelPage() {
       <section className="grid">
         <article className="card"><span className="tag">TRY AN ESTIMATE</span><h2>Select a country and crop</h2><p className="sub">The estimate is in tonnes per hectare (t/ha), for the year after the latest reported observation available for that country and crop.</p>
           <form onSubmit={estimate}>
-            <div className="row"><div className="field"><label htmlFor="yield-country">Country</label><select id="yield-country" value={country} onChange={e=>{const code=e.target.value;setCountry(code);const next=options?.crops.filter(x=>options.crop_codes_by_country?.[code]?.includes(x.code))||[];setCrop(next.find(x=>x.name.toLowerCase().includes("rice"))?.code||next[0]?.code||"");setResult(null);}} disabled={!options}>{options?.countries.map(x=><option key={x.code} value={x.code}>{x.name}</option>)}</select></div><div className="field"><label htmlFor="yield-crop">Crop</label><select id="yield-crop" value={crop} onChange={e=>setCrop(e.target.value)} disabled={!options||availableCrops.length===0}>{availableCrops.map(x=><option key={x.code} value={x.code}>{x.name}</option>)}</select></div></div>
-            <button className="btn" disabled={busy||!options}>{busy?"Estimating…":"Estimate national yield"}</button>
+            <div className="row"><div className="field"><label htmlFor="yield-country">Country</label><select id="yield-country" value={country} onChange={e=>{const code=e.target.value;setCountry(code);const next=options?.crops.filter(x=>options.crop_codes_by_country?.[code]?.includes(x.code))||[];setCrop(next.find(x=>x.name.toLowerCase().includes("rice"))?.code||next[0]?.code||"");setResult(null);}} disabled={!options||loading}>{options?.countries.map(x=><option key={x.code} value={x.code}>{x.name}</option>)}</select></div><div className="field"><label htmlFor="yield-crop">Crop</label><select id="yield-crop" value={crop} onChange={e=>setCrop(e.target.value)} disabled={!options||loading||availableCrops.length===0}>{availableCrops.map(x=><option key={x.code} value={x.code}>{x.name}</option>)}</select></div></div>
+            {loading&&<p className="sub" role="status">Connecting to the yield model…</p>}
+            <button className="btn" disabled={busy||loading||!options}>{busy?"Estimating…":loading?"Loading model…":"Estimate national yield"}</button>
           </form>
-          {error&&<p className="error" role="alert">{error}</p>}
+          {error&&<div><p className="error" role="alert">{error}</p><button className="btn" type="button" onClick={loadModelOptions} disabled={loading}>Retry loading model</button></div>}
           {result&&<div className="recommendations" aria-live="polite"><span className="tag">{result.country} · {result.crop} · {result.target_year}</span><div className="stats"><div className="stat"><b>{result.estimated_yield_t_ha}</b><span>Model estimate · t/ha</span></div><div className="stat"><b>{result.baseline_estimate_t_ha}</b><span>Simple prior-year baseline · t/ha</span></div><div className="stat"><b>{result.validation_mae_t_ha}</b><span>Held-out model MAE · t/ha</span></div></div><p className="sub" style={{marginTop:14}}>{result.interpretation}</p>{!result.beats_baseline&&<div className="banner">On the held-out years, this model’s average error was higher than the simple prior-year baseline. Treat the estimate as exploratory and compare it with the reported history.</div>}
             <h3>Recent reported yields</h3><div style={{display:"grid",gap:7,marginTop:12}}>{result.recent_history.map(row=><div key={row.year} style={{display:"grid",gridTemplateColumns:"44px 1fr 64px",gap:8,alignItems:"center",fontSize:12}}><span>{row.year}</span><div style={{height:12,background:"#edf2ed",borderRadius:8,overflow:"hidden"}}><div style={{height:"100%",width:`${Math.max(2,row.yield_t_ha/maxValue*100)}%`,background:"#1f6247",borderRadius:8}} /></div><b>{row.yield_t_ha} t/ha</b></div>)}</div>
           </div>}
