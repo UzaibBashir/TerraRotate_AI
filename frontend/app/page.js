@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getMapBounds, parseBoundaryGeoJSON, projectCoordinate } from "./field-utils.mjs";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://terrarotate-api.onrender.com/api";
 const CROPS = [["potato","Potato"],["rice","Rice"],["maize","Maize"],["wheat","Wheat"],["mustard","Mustard"],["pea","Field pea"]];
 const DEMO_FIELDS = [
   {id:"demo-kashmir",name:"Demo field · Kashmir",latitude:33.7311,longitude:75.1480,current_crop:"potato",water_availability:"moderate",priority:"balanced",soil_texture:"Loam",soil_ph:"6.4",organic_matter:"1.8",boundary_geojson:{type:"Polygon",coordinates:[[[75.142,33.728],[75.154,33.728],[75.154,33.734],[75.142,33.734],[75.142,33.728]]]}},

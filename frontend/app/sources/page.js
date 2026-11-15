@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://terrarotate-api.onrender.com/api";
 const nasa=[
  ["SMAP","https://earthdata.nasa.gov/data/platforms/space-based-platforms/smap","Global; coarse pixels"],
  ["GPM / IMERG","https://gpm.nasa.gov/data","Near-global; product/data gaps"],
