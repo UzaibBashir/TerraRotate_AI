@@ -22,10 +22,12 @@ export default function Home() {
   const [error,setError]=useState(""), [climateError,setClimateError]=useState("");
   const [layer,setLayer]=useState("modis_terra"), [imageDate,setImageDate]=useState(new Date(Date.now()-3*86400000).toISOString().slice(0,10)), [zoom,setZoom]=useState(1);
   const [imageUrl,setImageUrl]=useState(""), [imageError,setImageError]=useState("");
+  const [imageryBusy,setImageryBusy]=useState(false);
   const [legendUrl,setLegendUrl]=useState(""), [legendError,setLegendError]=useState(false);
   const [projection,setProjection]=useState(null), [projectionError,setProjectionError]=useState(""), [projectionBusy,setProjectionBusy]=useState(false);
 
   useEffect(()=>{try{setSavedFields(JSON.parse(localStorage.getItem("terrarotate_fields")||"[]"));}catch{setSavedFields([]);}},[]);
+  useEffect(()=>{loadImagery();},[]);
 
   const centerLat=Number(lat), centerLon=Number(lon);
   const bounds=Number.isFinite(centerLat)&&Number.isFinite(centerLon)?getMapBounds(centerLat,centerLon,zoom):getMapBounds(0,0,zoom);
@@ -35,7 +37,9 @@ export default function Home() {
     const box=event.currentTarget.getBoundingClientRect(), x=(event.clientX-box.left)/box.width, y=(event.clientY-box.top)/box.height;
     const nextLon=bounds.west+x*(bounds.east-bounds.west), nextLat=bounds.north-y*(bounds.north-bounds.south);
     setImageError("");
+    setImageryBusy(true);
     setLat(nextLat.toFixed(5));setLon(nextLon.toFixed(5));setClimate(null);setResult(null);setProjection(null);
+    setImageError("");setImageryBusy(true);
     setImageUrl(`${API}/imagery?lat=${encodeURIComponent(nextLat)}&lon=${encodeURIComponent(nextLon)}&layer=${encodeURIComponent(layer)}&date=${encodeURIComponent(imageDate)}&zoom=${zoom}`);
   }
   function updateCoordinate(axis,value){
@@ -79,7 +83,7 @@ export default function Home() {
   }
 
   function loadImagery() {
-    setImageError("");
+    setImageError("");setImageryBusy(true);
     setImageUrl(`${API}/imagery?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&layer=${encodeURIComponent(layer)}&date=${encodeURIComponent(imageDate)}&zoom=${zoom}`);
     setLegendError(false);setLegendUrl(`${API}/imagery/legend?layer=${encodeURIComponent(layer)}`);
   }
@@ -116,7 +120,7 @@ export default function Home() {
           <div className="row"><div className="field"><label htmlFor="map-zoom">Map zoom · 1× to 4×</label><select id="map-zoom" value={zoom} onChange={e=>{setZoom(Number(e.target.value));setImageUrl("");}}><option value={1}>1× regional</option><option value={2}>2×</option><option value={3}>3×</option><option value={4}>4× local view</option></select></div><div className="field"><label>&nbsp;</label><button className="btn" onClick={loadImagery}>Load NASA imagery</button></div></div>
           {imageError&&<div className="error" role="alert">{imageError}</div>}
           <div className="map-frame" role="button" tabIndex={0} aria-label="NASA imagery map. Click or use arrow keys to choose a location." onClick={selectMapPoint} onKeyDown={moveMapPoint}>
-          {imageUrl?<img src={imageUrl} alt="NASA GIBS imagery for the selected location" onError={()=>{setImageError("NASA GIBS has no image for this layer and date. Choose another date.");setImageUrl("");}}/>:<div className="map-empty">Load NASA imagery above to enable point selection.</div>}
+          {imageUrl?<img src={imageUrl} alt="NASA GIBS imagery for the selected location" onLoad={()=>setImageryBusy(false)} onError={()=>{setImageryBusy(false);setImageError("NASA GIBS has no image for this layer and date. Choose another date.");setImageUrl("");}}/>:<div className="map-empty">{imageError|| (imageryBusy?"Loading NASA GIBS imagery…":"Load NASA imagery above to enable point selection.")}</div>}
           <svg className="map-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{boundary?.rings?.length>0&&<path d={boundary.rings.map(ring=>`M ${ring.map(point=>projectCoordinate(point,bounds)).join(" L ")} Z`).join(" ")} fill="#d6ef8344" fillRule="evenodd" stroke="#e9ffab" strokeWidth="0.45"/>}<circle cx={((centerLon-bounds.west)/(bounds.east-bounds.west)*100)} cy={((bounds.north-centerLat)/(bounds.north-bounds.south)*100)} r="1.35" fill="#f5cf4a" stroke="#17261f" strokeWidth=".5"/></svg>
           <span className="map-attribution">NASA GIBS · {bounds.south.toFixed(2)} to {bounds.north.toFixed(2)}° lat</span>
         </div>{legendUrl&&<div className="map-legend"><b>NASA product legend</b>{!legendError?<img src={legendUrl} alt={`${layer} official NASA GIBS layer legend`} onError={()=>setLegendError(true)}/>:<span>GIBS did not return a separate legend for this layer. Color is product-specific; do not read it as a field measurement.</span>}</div>}<p className="status">Selected point: {Number.isFinite(centerLat)?centerLat.toFixed(5):"—"}, {Number.isFinite(centerLon)?centerLon.toFixed(5):"—"} · illustrative until you register a real field.</p></div></div>
