@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from flask import Blueprint, jsonify, request, Response, send_from_directory, abort
 from .services.power import fetch_power_daily, fetch_power_projection, fetch_power_water, fetch_power_monthly_profile, PowerError
-from .services.gibs import fetch_gibs_image, fetch_gibs_legend, GIBSError
+from .services.gibs import fetch_gibs_image, fetch_gibs_legend, fetch_gibs_available_dates, GIBSError
 from .services.rotation import recommend_rotations, CROPS
 from .services.intelligence import vegetation, bare_windows, water_budget, historical_climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
 from .services.yield_model import model_status, model_options, predict_national_yield, YieldModelError
@@ -114,6 +114,13 @@ def imagery():
             response.headers["X-Map-Bounds"]=json.dumps(metadata["bounds"],separators=(",",":"))
         response.headers["Cache-Control"]="public, max-age=21600"
         return response
+    except ValueError as exc: return jsonify({"error":str(exc)}),400
+    except GIBSError as exc: return jsonify({"error":str(exc),"source":"NASA GIBS"}),502
+
+@api.get("/imagery/dates")
+def imagery_dates():
+    layer=request.args.get("layer","modis_terra")
+    try: return jsonify({"layer":layer,"dates":fetch_gibs_available_dates(layer)})
     except ValueError as exc: return jsonify({"error":str(exc)}),400
     except GIBSError as exc: return jsonify({"error":str(exc),"source":"NASA GIBS"}),502
 

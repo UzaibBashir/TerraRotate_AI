@@ -1,5 +1,6 @@
 """NASA GIBS WMS image retrieval for listed NASA Earth-observation layers."""
-from datetime import date
+from datetime import date, timedelta
+import re
 import xml.etree.ElementTree as ET
 import requests
 from .cache import ttl_cache
@@ -40,6 +41,50 @@ def fetch_gibs_image(lat: float, lon: float, day: date, layer_key: str, zoom: in
         return response.content,{"provider":"NASA Global Imagery Browse Services (GIBS)","source":LAYERS[layer_key]["label"],"layer":LAYERS[layer_key],"date":day.isoformat(),"zoom":zoom,"bounds":{"west":west,"south":south,"east":east,"north":north},"coordinates":{"latitude":lat,"longitude":lon},"request_url":response.url,"content_type":content_type.split(";",1)[0],"note":"Rendered browse visualization for regional context. It is not an analysis-ready field measurement and is not used to calculate a field soil-moisture, precipitation, or NDVI value."}
     except requests.RequestException as exc:
         raise GIBSError(f"NASA GIBS imagery could not be retrieved: {exc}") from exc
+
+@ttl_cache(seconds=3600, max_entries=16)
+def fetch_gibs_available_dates(layer_key: str) -> list[str]:
+    """Return recent dates included in the selected layer's advertised TIME dimension."""
+    if layer_key not in LAYERS:
+        raise ValueError("Choose a supported NASA GIBS layer")
+    try:
+        response=requests.get(BASE_URL,params={"SERVICE":"WMS","REQUEST":"GetCapabilities","VERSION":"1.1.1"},timeout=45)
+        response.raise_for_status()
+        root=ET.fromstring(response.content)
+    except (requests.RequestException,ET.ParseError) as exc:
+        raise GIBSError(f"NASA GIBS date availability could not be retrieved: {exc}") from exc
+
+    target=LAYERS[layer_key]["id"]
+    layer_node=next((node for node in root.iter() if node.tag.endswith("Layer") and
+                     any(child.tag.endswith("Name") and child.text==target for child in node)),None)
+    if layer_node is None:
+        raise GIBSError("NASA GIBS does not advertise dates for this layer")
+    values=[]
+    for node in layer_node.iter():
+        if node.tag.endswith(("Dimension","Extent")) and node.attrib.get("name", "").lower()=="time" and node.text:
+            values.extend(node.text.split())
+    dates=set()
+    today=date.today()
+    for value in values:
+        for item in value.split(","):
+            item=item.strip()
+            if not item: continue
+            match=re.fullmatch(r"(\d{4}-\d{2}-\d{2})/(\d{4}-\d{2}-\d{2})/(P\d+D)",item)
+            if match:
+                start=date.fromisoformat(match.group(1)); end=date.fromisoformat(match.group(2))
+                step=int(re.search(r"\d+",match.group(3)).group())
+                if step < 1: continue
+                current=max(start,today-timedelta(days=90))
+                offset=(current-start).days
+                current=start+timedelta(days=((offset+step-1)//step)*step)
+                while current<=min(end,today):
+                    dates.add(current.isoformat()); current+=timedelta(days=step)
+            else:
+                try:
+                    day=date.fromisoformat(item[:10])
+                    if today-timedelta(days=90)<=day<=today: dates.add(day.isoformat())
+                except ValueError: pass
+    return sorted(dates,reverse=True)
 
 @ttl_cache(seconds=604800, max_entries=32)
 def fetch_gibs_legend(layer_key: str) -> tuple[bytes, dict]:
