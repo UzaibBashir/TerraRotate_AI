@@ -37,7 +37,7 @@ export default function Sources(){
   const [samples,setSamples]=useState(null);
   useEffect(()=>{fetch(`${API}/resource-samples`).then(r=>r.ok?r.json():Promise.reject()).then(setSamples).catch(()=>setSamples({error:true}));},[]);
   return <main style={{maxWidth:980,margin:"48px auto",padding:24,fontFamily:"Arial,sans-serif",lineHeight:1.65,color:"#17261f"}}>
-  <a href="/">← Back to field overview</a><p style={{color:"#52734f",fontWeight:700,letterSpacing:".12em",fontSize:12,marginTop:30}}>DATA TRANSPARENCY</p><h1>Sources and evidence limits</h1>
+  <a href="/">← Back to field overview</a> · <a href="/model">Rotation research</a><p style={{color:"#52734f",fontWeight:700,letterSpacing:".12em",fontSize:12,marginTop:30}}>DATA TRANSPARENCY</p><h1>Sources and evidence limits</h1>
   <p>The official Field Shift Resources tab lists 24 resource cards: 22 under “NASA Data & Resources” and 2 ESA partner resources. These are optional resources, not 24 mandatory integrations. The provider is identified for every entry.</p>
   <section style={{background:"#f1f6ec",padding:20,borderRadius:12,margin:"22px 0"}}><h2 style={{marginTop:0}}>NASA data currently connected</h2>
     <p><b>NASA POWER daily APIs:</b> daily <code>T2M</code> / <code>PRECTOTCORR</code> climate context and daily <code>SFMC</code>, <code>RZMC</code>, <code>EVPTRNS</code> water-cycle parameters. Native grids vary by parameter; missing soil-moisture observations remain missing. Evaporation is shown as energy flux and is not converted to water depth.</p>

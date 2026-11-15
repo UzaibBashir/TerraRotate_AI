@@ -13,6 +13,8 @@ Explainable, farmer-led exploration of climate-aware crop-rotation options for N
 - [Download the sample bundle](data/terrarotate_global_resource_samples.zip) or inspect the [download manifest](data/resource_samples/download_manifest.json) and [24-resource download status](data/resource_samples/resource_download_status.csv).
 - [Seven-slide challenge demo deck draft](demo/presentation/TerraRotate_AI_challenge_demo_v3.pptx). Replace the marked workflow panel with real app screenshots before competition submission.
 - Transparent baseline rotation comparison with explanations and limitations.
+- Experimental national crop-yield context model on `/model`, trained on FAOSTAT QCL yield history; evaluated on held-out years and kept separate from field-level rotation recommendations because it does not contain crop-sequence labels.
+- Proposed crop-outcome modeling plan at `/model`; clearly labeled as research only, with no trained model, yield estimates, or predictive claims.
 - Seven additional input-driven analysis tools at `/tools`: vegetation patterns, water-budget scenarios, possible low-vegetation windows, NASA POWER historical climate analogues, sample-point clustering, farmer feedback (browser-local by default, optional Supabase sync), and rotation ranking sensitivity.
 - Successful NASA POWER/GIBS responses are cached in bounded in-memory TTL caches; cache entries are temporary and are not shared across separate server workers.
 - Historical climate analogues use live NASA POWER monthly data at coordinates the user supplies. The request is limited to one field and five candidate points.
@@ -39,7 +41,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Visit `http://localhost:3000/tools` for the analysis modules. Vegetation and zone analysis require real, sourced numeric input; example schemas are not observations. NASA POWER and GIBS requests need network access; the app reports errors rather than substituting observations. Current public GIBS imagery views do not require Earthdata Login.
+Open `http://localhost:3000`. Visit `/tools` for the analysis modules, `/sources` for data provenance and limits, and `/model` for the proposed rotation research plan. Vegetation and zone analysis require real, sourced numeric input; example schemas are not observations. NASA POWER and GIBS requests need network access; the app reports errors rather than substituting observations. Current public GIBS imagery views do not require Earthdata Login.
 
 Run backend checks:
 
@@ -54,6 +56,8 @@ Run frontend utility tests (Node.js built-in test runner):
 cd frontend
 npm test
 ```
+
+The experimental model artifact is included under `backend/app/data/`. To retrain it, download the official FAOSTAT QCL normalized ZIP into `data/faostat_qcl.zip`, install backend requirements, then run `python scripts/train_faostat_yield_model.py` from the repository root. The source archive is not committed. Training results and limitations are documented in `docs/model_evaluation.md`.
 
 The farmer-feedback tool works in browser-local mode by default. To enable optional Supabase account sync, create `frontend/.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from your own project, apply `database/schema.sql`, restart Next.js, and use the sign-in controls on `/tools`. The schema uses row-level security; never put a Supabase service-role key in the browser. Supabase is not connected to a live project yet. Public hosting and competition submission are not configured.
 

@@ -1,0 +1,30 @@
+{
+  "source": "FAOSTAT Crops and Livestock Products (QCL), Yield element, kg/ha converted to t/ha",
+  "source_url": "https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip",
+  "trained_at_utc": "2026-11-15T09:08:36.335271+00:00",
+  "training_years": [
+    1981,
+    2019
+  ],
+  "test_years": [
+    2020,
+    2024
+  ],
+  "training_rows": 384254,
+  "test_rows": 53487,
+  "countries": 210,
+  "crops": 168,
+  "mae_t_ha": 0.5586,
+  "rmse_t_ha": 1.364,
+  "persistence_baseline_mae_t_ha": 0.5182,
+  "beats_persistence_baseline": false,
+  "target": "National annual crop yield, tonnes per hectare",
+  "features": [
+    "country",
+    "crop",
+    "year",
+    "previous year national yield",
+    "previous three-observation average"
+  ],
+  "scope_note": "National history only. No crop rotation sequence, field conditions, or causality is modeled."
+}

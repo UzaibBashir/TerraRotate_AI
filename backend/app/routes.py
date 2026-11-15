@@ -8,8 +8,28 @@ from .services.power import fetch_power_daily, fetch_power_projection, fetch_pow
 from .services.gibs import fetch_gibs_image, fetch_gibs_legend, GIBSError
 from .services.rotation import recommend_rotations, CROPS
 from .services.intelligence import vegetation, bare_windows, water_budget, historical_climate_analogs, spatial_zones, bayesian_feedback, rotation_risk
+from .services.yield_model import model_status, model_options, predict_national_yield, YieldModelError
 
 api = Blueprint("api", __name__)
+
+@api.get("/model/yield/status")
+def yield_model_status():
+    return jsonify(model_status())
+
+@api.get("/model/yield/options")
+def yield_model_options():
+    try: return jsonify(model_options())
+    except (YieldModelError, OSError, ValueError) as exc: return jsonify({"error": str(exc)}), 503
+
+@api.post("/model/yield/predict")
+def yield_model_predict():
+    body = request.get_json(silent=True) or {}
+    try:
+        if not str(body.get("country_code", "")).isdigit() or not str(body.get("crop_code", "")).isdigit():
+            return jsonify({"error": "Choose a country and crop."}), 400
+        return jsonify(predict_national_yield(body["country_code"], body["crop_code"]))
+    except YieldModelError as exc: return jsonify({"error": str(exc)}), 422
+    except (OSError, ValueError) as exc: return jsonify({"error": str(exc)}), 503
 SAMPLE_DIR = Path(__file__).resolve().parents[2] / "data" / "resource_samples"
 
 @api.get("/resource-samples")

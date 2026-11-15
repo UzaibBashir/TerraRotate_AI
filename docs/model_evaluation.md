@@ -1,24 +1,19 @@
-# Model and method evaluation
+# Experimental yield model
 
-## Model status
+## What is deployed in the prototype
 
-No supervised or deep-learning model is trained or deployed. The repository has no labeled, field-level outcomes for crop stress, yield, soil change, water use, or farmer recommendation success. No accuracy, validation score, uncertainty interval, or causal impact is claimed.
+The `/model` page uses a trained Ridge regression model to estimate the next annual **national crop yield** (tonnes per hectare) for a selected country and crop. It is separate from the rotation ranking. Inputs are country, crop, year, previous-year national yield, and the mean of up to three recent reported yields. The FAOSTAT QCL `Yield` values are converted from kg/ha to t/ha. The model is not a farm/field forecast and does not estimate the causal effect of a preceding crop or rotation.
 
-## Software behavior checks
+The exported regression coefficients and compact history lookup are in `backend/app/data/faostat_yield_model.json`; metrics and provenance are in `backend/app/data/faostat_yield_model_metrics.json`. The full source archive is intentionally not bundled in Git. Reproduce the fit with the official QCL normalized bulk file saved as `data/faostat_qcl.zip`, then run `python scripts/train_faostat_yield_model.py` from the repository root. The backend serves the exported plain-data model without importing machine-learning packages. Retraining requires pandas, NumPy, and scikit-learn, listed in backend requirements.
 
-The Flask suite checks API input validation, NASA response parsing, missing-value handling, rotation weight normalization and family-break constraints, water-balance arithmetic, vegetation/bare-window labels, climate-analogue ordering, sample clustering, Beta feedback updates, and RotationRisk confidence withholding. These tests use mocked responses and supplied fixtures; they establish code behavior only, not scientific validity.
+## Data and evaluation
 
-## Methods in use
+Source: FAO. 2026. *FAOSTAT: Crops and livestock products (QCL).* Accessed 15 Nov 2026. https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip. Licence: CC-BY-4.0. Dataset attribution follows [FAO statistical database terms](https://www.fao.org/contact-us/terms/db-terms-of-use/). FAOSTAT data may include third-party exceptions; check the current source metadata before redistribution.
 
-- Vegetation summaries: median, median absolute deviation and first-to-last difference from user-supplied dated observations.
-- Bare windows: threshold and date-gap grouping; possible low vegetation only.
-- Zones: deterministic clustering of user-supplied point measurements; exploratory sample clusters only.
-- Climate analogues: seasonal distance between NASA POWER historical monthly profiles at coordinates selected by the user.
-- Rotation: weighted catalog rules with configurable normalized weights and a family-break constraint; local suitability is not established.
-- Water: explicit depth/area arithmetic using farmer-entered planning assumptions alongside separate NASA POWER context.
-- Feedback: Beta(2,2) prior updated with subjective binary feedback.
-- RotationRisk: rank sensitivity across four preference presets; no probability or confidence.
+The fit used 384,254 consecutive country/crop/year rows from 1981–2019. The latest five years, 2020–2024 (53,487 rows), were held out by time. On that holdout, the model’s MAE was **0.5586 t/ha** and RMSE was **1.3640 t/ha**. A simple previous-year-yield baseline had MAE **0.5182 t/ha**. The trained model did not beat that baseline overall. The page shows both values and warns users about the comparison. This is an aggregate score; per-country/per-crop performance varies and is not independently reviewed.
 
-## Evaluation needed before agricultural use
+## Limits and next data needed
 
-The team should obtain permissioned multi-season field observations across crops and agroecological regions, define independent outcome labels, use location/time-separated holdouts to prevent leakage, compare against local agronomist and farmer baselines, measure calibration and error by crop/region, and review the methods with agricultural experts. No such evaluation is currently complete.
+The training set has no rotation sequence, field soil, irrigation, cultivar, planting date, management, or field-level yield labels. National observations aggregate very different growing conditions. Therefore, this model is presented as experimental historical context only and does not change the rule-based rotation recommendation. Do not interpret the output as a probability, causal estimate, farm prediction, or agronomic advice.
+
+To make a useful rotation model, obtain permissioned multi-season field/trial records linking prior crop sequence, location, crop, management, and yield; join compatible weather; hold out entire locations and years; compare against simple local baselines; and review performance with regional agronomists before enabling decisions.
