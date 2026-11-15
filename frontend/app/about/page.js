@@ -115,9 +115,7 @@ export default function About() {
         <h3 className="team-heading">Team members</h3>
         <div className="member-list">{teamMembers.map(name => {
           const member = <><div className="member-photo" aria-label={`Photo placeholder for ${name}`}><span>{name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}</span><small>Photo placeholder</small></div><b>{name}</b></>;
-          return name === "Uzaib Bashir Malik"
-            ? <a className="member-card" key={name} href="https://github.com/UzaibBashir" target="_blank" rel="noreferrer">{member}</a>
-            : <article className="member-card" key={name}>{member}</article>;
+          return <a className="member-card" key={name} href="https://github.com/UzaibBashir" target="_blank" rel="noreferrer">{member}</a>;
         })}</div>
       </section>
 
