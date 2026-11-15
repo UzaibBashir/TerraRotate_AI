@@ -166,8 +166,14 @@ a { color: var(--green); }
 .image-guide { margin-top: 18px; padding: 10px 14px; border-radius: 10px; background: #f6f8f4; }
 .image-guide p { margin: 0; font-size: 13px; }
 .legacy-tools { margin-top: 20px; }
-.legacy-tools > summary { color: var(--green); font-weight: 700; cursor: pointer; }
 .legacy-tools > .grid { margin-top: 18px; }
+.analysis-tools-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.analysis-tools-heading h2 { margin: 5px 0 7px; }
+.module-list { display: grid; gap: 8px; margin: 18px 0; }
+.module-button { display: grid; gap: 3px; width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfa; color: var(--ink); text-align: left; }
+.module-button:hover, .module-button.active { border-color: var(--green); background: var(--soft); }
+.module-button b { color: var(--green); font-size: 14px; }
+.module-button span { color: var(--muted); font-size: 12px; line-height: 1.45; }
 .error { margin-top: 12px; color: #9d3b2c; font-size: 14px; }
 .json-input, .json-output { width: 100%; min-height: 260px; overflow: auto; overflow-wrap: anywhere; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: #f7faf7; color: var(--ink); font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; resize: vertical; }
 .boundary-input { min-height: 150px; margin-bottom: 9px; }

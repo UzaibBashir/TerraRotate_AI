@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { getMapBounds, parseBoundaryGeoJSON, projectCoordinate } from "./field-utils.mjs";
+import { API } from "./api-config.mjs";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://terrarotate-api.onrender.com/api";
 const CROPS = [["potato","Potato"],["rice","Rice"],["maize","Maize"],["wheat","Wheat"],["mustard","Mustard"],["pea","Field pea"]];
 const MAP_GUIDES = {
   modis_ndvi:{label:"Plant cover · Terra MODIS",description:"This image estimates how green and active plant cover is across the landscape. It can help you compare broad changes over time around your field.",reading:"Use the NASA legend to compare colors for this date. More green often means more active vegetation, but crop type, season, bare soil, clouds, and the map’s pixel size affect what you see."},

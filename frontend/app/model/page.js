@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "https://terrarotate-api.onrender.com/api";
+import { API } from "../api-config.mjs";
 
 export default function ModelPage() {
   const [options, setOptions] = useState(null), [country, setCountry] = useState(""), [crop, setCrop] = useState(""), [metrics, setMetrics] = useState(null);
