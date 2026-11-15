@@ -161,6 +161,14 @@ class GIBSTests(unittest.TestCase):
         self.assertEqual(metadata["provider"],"NASA Global Imagery Browse Services (GIBS)")
         self.assertEqual(metadata["date"],"2026-01-01")
     @patch("app.services.gibs.requests.get")
+    def test_fetches_viirs_ndvi_browse_layer(self,get):
+        response=Mock();response.url="https://gibs.earthdata.nasa.gov/wms/example";response.raise_for_status.return_value=None
+        response.headers={"Content-Type":"image/png"};response.content=b"ndvi-map";get.return_value=response
+        image,metadata=fetch_gibs_image(33.7,75.1,date(2026,11,1),"viirs_ndvi")
+        self.assertEqual(image,b"ndvi-map")
+        self.assertEqual(metadata["layer"]["id"],"VIIRS_SNPP_NDVI_8Day")
+        self.assertIn("browse visualization",metadata["note"])
+    @patch("app.services.gibs.requests.get")
     def test_gibs_zoom_updates_view_bounds(self,get):
         response=Mock();response.url="https://gibs.earthdata.nasa.gov/wms/example";response.raise_for_status.return_value=None
         response.headers={"Content-Type":"image/png"};response.content=b"png";get.return_value=response

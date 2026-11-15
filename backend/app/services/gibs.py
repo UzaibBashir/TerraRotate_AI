@@ -10,6 +10,7 @@ LAYERS = {
     "modis_aqua": {"id":"MODIS_Aqua_CorrectedReflectance_TrueColor","label":"Aqua MODIS Corrected Reflectance (True Color)","resolution":"250 m visualization layer"},
     "viirs_snpp": {"id":"VIIRS_SNPP_CorrectedReflectance_TrueColor","label":"Suomi NPP VIIRS Corrected Reflectance (True Color)","resolution":"500 m visualization layer"},
     "modis_ndvi": {"id":"MODIS_Terra_NDVI_8Day","label":"Terra MODIS 8-day NDVI","resolution":"product grid; see NASA layer metadata"},
+    "viirs_ndvi": {"id":"VIIRS_SNPP_NDVI_8Day","label":"Suomi NPP VIIRS 8-day NDVI","resolution":"500 m-class global product grid; browse image only","cadence":"8-day composite; select a composite date"},
     "imerg_precipitation": {"id":"IMERG_Precipitation_Rate","label":"GPM IMERG precipitation rate","resolution":"0.1 degree source grid; daily browse visualization"},
     "smap_surface_moisture": {"id":"SMAP_L4_Analyzed_Surface_Soil_Moisture","label":"SMAP L4 analyzed surface soil moisture","resolution":"9 km source product; browse visualization"},
 }
@@ -36,7 +37,7 @@ def fetch_gibs_image(lat: float, lon: float, day: date, layer_key: str, zoom: in
         content_type=response.headers.get("Content-Type","").lower()
         if not content_type.startswith("image/"):
             raise GIBSError("NASA GIBS returned a non-image response; this layer/date may have no available image")
-        return response.content,{"provider":"NASA Global Imagery Browse Services (GIBS)","source":LAYERS[layer_key]["label"],"layer":LAYERS[layer_key],"date":day.isoformat(),"zoom":zoom,"bounds":{"west":west,"south":south,"east":east,"north":north},"coordinates":{"latitude":lat,"longitude":lon},"request_url":response.url,"content_type":content_type.split(";",1)[0],"note":"Rendered browse visualization for regional context. It is not an analysis-ready field measurement and is not used to calculate a field soil-moisture or precipitation value."}
+        return response.content,{"provider":"NASA Global Imagery Browse Services (GIBS)","source":LAYERS[layer_key]["label"],"layer":LAYERS[layer_key],"date":day.isoformat(),"zoom":zoom,"bounds":{"west":west,"south":south,"east":east,"north":north},"coordinates":{"latitude":lat,"longitude":lon},"request_url":response.url,"content_type":content_type.split(";",1)[0],"note":"Rendered browse visualization for regional context. It is not an analysis-ready field measurement and is not used to calculate a field soil-moisture, precipitation, or NDVI value."}
     except requests.RequestException as exc:
         raise GIBSError(f"NASA GIBS imagery could not be retrieved: {exc}") from exc
 
