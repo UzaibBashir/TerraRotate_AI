@@ -43,7 +43,7 @@ export default function ModelPage() {
   const latest=historyValues.length?historyValues[historyValues.length-1]:null;
   const estimateDelta=latest===null||!result?"—":(result.estimated_yield_t_ha-latest).toFixed(2);
   return <main className="shell">
-    <header className="topbar"><a className="brand" href="/">◒ TERRAROTATE AI</a><nav className="nav"><a href="/">Field overview</a><a href="/tools">Analysis tools</a><span>Yield model</span></nav><div className="topbar-actions"><a className="nav-sources" href="/sources">Data sources</a><span>EXPERIMENTAL MODEL</span></div></header>
+    <header className="topbar"><a className="brand" href="/">◒ TERRAROTATE AI</a><nav className="nav"><a href="/">Field overview</a><a href="/tools">Analysis tools</a><span>Yield model</span><a href="/about">About</a></nav><div className="topbar-actions"><a className="nav-sources" href="/sources">Data sources</a><span>EXPERIMENTAL MODEL</span></div></header>
     <section className="hero"><div><div className="eyebrow">FAOSTAT TRAINED · NATIONAL SCALE</div><h1>Crop yield history, made explorable</h1><p>Explore an experimental estimate for next year’s national crop yield, based on FAO reported history. This adds broad context to rotation research; it does not predict a field’s harvest.</p></div><div className="hero-badge">Research use only</div></section>
     <div className="content">
       <div className="banner"><b>Scope:</b> National yield trends only. The training data has no crop sequence, field soil, irrigation, or farm management labels, so the model cannot estimate the effect of a rotation or recommend a field-specific crop.</div>

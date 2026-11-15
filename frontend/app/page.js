@@ -286,7 +286,7 @@ export default function Home() {
     : "Run the field analysis to add NASA POWER climate numericals to this report.";
 
   return <main className="shell">
-    <header className="topbar"><a className="brand" href="/">◒ TERRAROTATE <span style={{fontWeight:400}}>AI</span></a><nav className="nav"><span>Field overview</span><a href="/tools">Analysis tools</a><a href="/model">Rotation research</a></nav><div className="topbar-actions"><a className="nav-sources" href="/sources">Data sources</a><span>GLOBAL DEMO · THREE SAMPLE REGIONS</span></div></header>
+    <header className="topbar"><a className="brand" href="/">◒ TERRAROTATE <span style={{fontWeight:400}}>AI</span></a><nav className="nav"><span>Field overview</span><a href="/tools">Analysis tools</a><a href="/model">Rotation research</a><a href="/about">About</a></nav><div className="topbar-actions"><a className="nav-sources" href="/sources">Data sources</a><span>GLOBAL DEMO · THREE SAMPLE REGIONS</span></div></header>
     <section className="hero"><div><div className="eyebrow">A CLEARER PLAN FOR YOUR FARM</div><h1>Make a plan for<br/>your next growing season.</h1><p>Tell us what you grow and how much water you have. We’ll compare crop rotations and show the climate information behind them.</p><div className="hero-actions"><button className="btn hero-cta" onClick={()=>document.getElementById("farm-details")?.scrollIntoView({behavior:"smooth",block:"start"})}>Start with your field <span aria-hidden="true">↓</span></button><span className="hero-note">Free to explore · No account needed</span></div></div><div className="hero-badge">Your farm · Your priorities</div></section>
     <section className="content">
       <article className="card field-card" id="farm-details">
