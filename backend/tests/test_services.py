@@ -189,6 +189,18 @@ class GIBSTests(unittest.TestCase):
 class ApiTests(unittest.TestCase):
     def setUp(self): self.client = create_app().test_client()
     def test_health(self): self.assertEqual(self.client.get("/health").json["status"],"ok")
+    def test_vercel_origin_is_allowed_for_browser_api_calls(self):
+        origin="https://terra-rotate-ai.vercel.app"
+        preflight=self.client.options("/api/rotations",headers={"Origin":origin,"Access-Control-Request-Method":"POST"})
+        self.assertEqual(preflight.headers.get("Access-Control-Allow-Origin"),origin)
+        climate_payload={"source":"NASA POWER","rows":[]}
+        with patch("app.routes.fetch_power_daily",return_value=climate_payload):
+            climate=self.client.get("/api/climate?lat=33.7&lon=75.1",headers={"Origin":origin})
+        rotation=self.client.post("/api/rotations",json={"current_crop":"potato"},headers={"Origin":origin})
+        self.assertEqual(climate.status_code,200)
+        self.assertEqual(climate.headers.get("Access-Control-Allow-Origin"),origin)
+        self.assertEqual(rotation.status_code,200)
+        self.assertEqual(rotation.headers.get("Access-Control-Allow-Origin"),origin)
     def test_rejects_invalid_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=91&lon=0").status_code,400)
     def test_rejects_nonfinite_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=NaN&lon=0").status_code,400)
     def test_rejects_unknown_imagery_layer(self): self.assertEqual(self.client.get("/api/imagery?lat=33&lon=75&layer=other").status_code,400)
