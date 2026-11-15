@@ -1,9 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getMapBounds, parseBoundaryGeoJSON, projectCoordinate } from "./field-utils.mjs";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 const CROPS = [["potato","Potato"],["rice","Rice"],["maize","Maize"],["wheat","Wheat"],["mustard","Mustard"],["pea","Field pea"]];
+const DEMO_FIELDS = [
+  {id:"demo-kashmir",name:"Demo field · Kashmir",latitude:33.7311,longitude:75.1480,boundary_geojson:{type:"Polygon",coordinates:[[[75.142,33.728],[75.154,33.728],[75.154,33.734],[75.142,33.734],[75.142,33.728]]]}},
+  {id:"demo-punjab",name:"Demo field · Punjab",latitude:30.9010,longitude:75.8573,boundary_geojson:{type:"Polygon",coordinates:[[[75.851,30.898],[75.863,30.898],[75.863,30.904],[75.851,30.904],[75.851,30.898]]]}},
+  {id:"demo-karnataka",name:"Demo field · Karnataka",latitude:15.3173,longitude:75.7139,boundary_geojson:{type:"Polygon",coordinates:[[[75.7079,15.3143],[75.7199,15.3143],[75.7199,15.3203],[75.7079,15.3203],[75.7079,15.3143]]]}}
+].map(field=>({...field,area_hectares:parseBoundaryGeoJSON(JSON.stringify(field.boundary_geojson)).areaHectares}));
+const DEFAULT_DEMO = DEMO_FIELDS[0];
 
 async function readJson(response, fallback) {
   const value = await response.json();
@@ -13,8 +19,10 @@ async function readJson(response, fallback) {
 
 export default function Home() {
   const [lat,setLat]=useState("33.7311"), [lon,setLon]=useState("75.1480");
-  const [fieldName,setFieldName]=useState("Kashmir demonstration point"), [fieldArea,setFieldArea]=useState("");
-  const [boundaryText,setBoundaryText]=useState(""), [boundary,setBoundary]=useState(null), [boundaryError,setBoundaryError]=useState("");
+  const [fieldName,setFieldName]=useState(DEFAULT_DEMO.name), [fieldArea,setFieldArea]=useState(DEFAULT_DEMO.area_hectares.toFixed(3));
+  const [boundaryText,setBoundaryText]=useState(()=>JSON.stringify(DEFAULT_DEMO.boundary_geojson,null,2)), [boundary,setBoundary]=useState(()=>({rings:DEFAULT_DEMO.boundary_geojson.coordinates,area:DEFAULT_DEMO.area_hectares})), [boundaryError,setBoundaryError]=useState("");
+  const [boundaryMethod,setBoundaryMethod]=useState("geojson"), [googleMapSearch,setGoogleMapSearch]=useState("");
+  const boundaryFileRef=useRef(null);
   const [savedFields,setSavedFields]=useState([]), [fieldMessage,setFieldMessage]=useState("");
   const [crop,setCrop]=useState("potato"), [water,setWater]=useState("moderate"), [priority,setPriority]=useState("balanced");
   const [soilTexture,setSoilTexture]=useState(""), [soilPh,setSoilPh]=useState(""), [organicMatter,setOrganicMatter]=useState("");
@@ -62,6 +70,14 @@ export default function Home() {
     }catch(e){setBoundary(null);setBoundaryError(e.message||"Boundary GeoJSON is invalid.");}
   }
 
+  async function importBoundaryFile(event){
+    const file=event.target.files?.[0];if(!file)return;
+    setBoundaryError("");
+    try{const text=await file.text();const polygon=parseBoundaryGeoJSON(text);setBoundaryText(text);setBoundary({rings:polygon.rings,area:polygon.areaHectares});setFieldArea(polygon.areaHectares.toFixed(3));setFieldMessage(`Boundary added from ${file.name}. Estimated area: ${polygon.areaHectares.toFixed(3)} hectares.`);}
+    catch(e){setBoundary(null);setBoundaryError(`${file.name}: ${e.message||"Could not read this boundary."}`);}
+    event.target.value="";
+  }
+
   function saveField(){
     const latitude=Number(lat),longitude=Number(lon),area=fieldArea===""?null:Number(fieldArea);
     if(!fieldName.trim()||!Number.isFinite(latitude)||latitude < -90||latitude>90||!Number.isFinite(longitude)||longitude < -180||longitude>180||(area!==null&&(!Number.isFinite(area)||area<=0))){setFieldMessage("Enter a field name, valid coordinates, and a positive area if provided.");return;}
@@ -69,7 +85,7 @@ export default function Home() {
     const next=[field,...savedFields.filter(item=>item.name!==field.name)].slice(0,20);setSavedFields(next);localStorage.setItem("terrarotate_fields",JSON.stringify(next));setFieldMessage("Field saved on this device only. It has not been uploaded to a server.");
   }
 
-  function loadSavedField(id){const field=savedFields.find(item=>item.id===id);if(!field)return;setFieldName(field.name);setLat(String(field.latitude));setLon(String(field.longitude));setFieldArea(field.area_hectares==null?"":String(field.area_hectares));if(field.boundary_geojson){setBoundary({rings:field.boundary_geojson.coordinates,area:field.area_hectares||0});setBoundaryText(JSON.stringify(field.boundary_geojson,null,2));}else setBoundary(null);setClimate(null);setResult(null);setProjection(null);setImageUrl("");}
+  function loadSavedField(id){const field=[...DEMO_FIELDS,...savedFields].find(item=>item.id===id);if(!field)return;setFieldName(field.name);setLat(String(field.latitude));setLon(String(field.longitude));setFieldArea(field.area_hectares==null?"":String(field.area_hectares));if(field.boundary_geojson){setBoundary({rings:field.boundary_geojson.coordinates,area:field.area_hectares||0});setBoundaryText(JSON.stringify(field.boundary_geojson,null,2));}else{setBoundary(null);setBoundaryText("");}setBoundaryError("");setClimate(null);setResult(null);setProjection(null);setImageUrl("");setFieldMessage(field.id.startsWith("demo-")?"Demo field loaded. Its location and boundary are examples only.":"");}
 
   async function analyze() {
     setBusy(true); setError(""); setClimateError(""); setClimate(null); setResult(null);
@@ -115,7 +131,9 @@ export default function Home() {
       <article className="card field-card">
         <div className="row field-head"><div><h2>Field registration · local demo</h2><p className="sub">Choose a point on NASA imagery, enter your field details, or load a field saved in this browser. These records are not sent to a server.</p></div><div className="field saved-field"><label htmlFor="saved-field">Saved on this device</label><select id="saved-field" value="" onChange={e=>loadSavedField(e.target.value)}><option value="">Choose a saved field</option>{savedFields.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div>
         <div className="row"><div className="field"><label htmlFor="field-name">Field name</label><input id="field-name" value={fieldName} onChange={e=>setFieldName(e.target.value)} maxLength={120}/></div><div className="field"><label htmlFor="field-area">Field area (hectares)</label><input id="field-area" type="number" min="0.001" step="any" value={fieldArea} onChange={e=>setFieldArea(e.target.value)} placeholder="Optional; or calculate from boundary"/></div></div>
-        <div className="row"><div className="field"><label htmlFor="boundary-geojson">Field boundary (optional GeoJSON Polygon)</label><textarea id="boundary-geojson" className="json-input boundary-input" value={boundaryText} onChange={e=>setBoundaryText(e.target.value)} placeholder='{"type":"Polygon","coordinates":[[[75.10,33.70],[75.12,33.70],[75.12,33.72],[75.10,33.72],[75.10,33.70]]]}' spellCheck="false"/><button className="btn secondary" onClick={parseBoundary}>Validate boundary and estimate area</button>{boundaryError&&<div className="error" role="alert">{boundaryError}</div>}</div><div className="field map-field"><label>Interactive NASA map · select point</label><p className="sub">Choose a NASA layer and date, then load the map. Click to choose a location; arrow keys move the point, and Shift moves in larger steps. Zoom and layer imagery are visual context only.</p>
+        <div className="row"><div className="field boundary-entry"><label>Choose how to add your field <span className="optional">· optional</span></label><div className="boundary-tabs" role="tablist" aria-label="Field boundary method"><button type="button" role="tab" aria-selected={boundaryMethod==="geojson"} className={boundaryMethod==="geojson"?"active":""} onClick={()=>setBoundaryMethod("geojson")}>GeoJSON</button><button type="button" role="tab" aria-selected={boundaryMethod==="google"} className={boundaryMethod==="google"?"active":""} onClick={()=>setBoundaryMethod("google")}>Google Maps</button></div>
+          {boundaryMethod==="geojson"?<><p className="sub">Upload a field outline file, or open the paste option below. We’ll show the outline and estimate its area.</p><input ref={boundaryFileRef} className="visually-hidden" type="file" accept=".json,.geojson,application/geo+json,application/json" onChange={importBoundaryFile} aria-label="Choose a GeoJSON boundary file"/><button className="btn" type="button" onClick={()=>boundaryFileRef.current?.click()}>Choose GeoJSON file</button><span className="file-hint">.geojson or .json</span><details className="boundary-advanced"><summary>Or copy and paste GeoJSON</summary><p className="sub">Paste a GeoJSON Polygon or Feature. Coordinates use longitude, latitude order.</p><textarea id="boundary-geojson" className="json-input boundary-input" value={boundaryText} onChange={e=>setBoundaryText(e.target.value)} placeholder='{"type":"Polygon","coordinates":[[[75.10,33.70],[75.12,33.70],[75.12,33.72],[75.10,33.72],[75.10,33.70]]]}' spellCheck="false"/><button className="btn secondary" type="button" onClick={parseBoundary}>Check pasted boundary</button></details></>:<><p className="sub">Find your field in Google Maps, then use its coordinates below to set the field location. The map opens in a new tab.</p><div className="google-search"><label htmlFor="google-map-search">Search for your field or nearby place</label><input id="google-map-search" value={googleMapSearch} onChange={e=>setGoogleMapSearch(e.target.value)} placeholder="Village, address, or place name"/><a className="btn google-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(googleMapSearch||`${lat},${lon}`)}`} target="_blank" rel="noreferrer">Find in Google Maps ↗</a></div><p className="sub google-help">In Maps, right-click your field to copy its coordinates, then enter them in the latitude and longitude boxes below.</p></>}
+          {boundary&&<div className="boundary-success" role="status"><b>Boundary added</b><span>Estimated size: {boundary.area.toFixed(3)} hectares</span></div>}{boundaryError&&<div className="error" role="alert">{boundaryError}</div>}</div><div className="field map-field"><label>Interactive NASA map · select point</label><p className="sub">Choose a NASA layer and date, then load the map. Click to choose a location; arrow keys move the point, and Shift moves in larger steps. Zoom and layer imagery are visual context only.</p>
           <div className="row"><div className="field"><label htmlFor="map-layer">NASA data layer</label><select id="map-layer" value={layer} onChange={e=>{setLayer(e.target.value);setImageUrl("");setLegendUrl("");}}><option value="modis_terra">Terra MODIS · true color</option><option value="modis_aqua">Aqua MODIS · true color</option><option value="viirs_snpp">Suomi NPP VIIRS · true color</option><option value="modis_ndvi">Terra MODIS · 8-day NDVI</option><option value="imerg_precipitation">GPM IMERG · precipitation rate</option><option value="smap_surface_moisture">SMAP L4 · surface soil moisture</option></select></div><div className="field"><label htmlFor="map-date">Observation date</label><input id="map-date" type="date" value={imageDate} max={new Date().toISOString().slice(0,10)} onChange={e=>{setImageDate(e.target.value);setImageUrl("");}}/></div></div>
           <div className="row"><div className="field"><label htmlFor="map-zoom">Map zoom · 1× to 4×</label><select id="map-zoom" value={zoom} onChange={e=>{setZoom(Number(e.target.value));setImageUrl("");}}><option value={1}>1× regional</option><option value={2}>2×</option><option value={3}>3×</option><option value={4}>4× local view</option></select></div><div className="field"><label>&nbsp;</label><button className="btn" onClick={loadImagery}>Load NASA imagery</button></div></div>
           {imageError&&<div className="error" role="alert">{imageError}</div>}
