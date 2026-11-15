@@ -151,6 +151,8 @@ a { color: var(--green); }
 .readable-data dd { min-width: 0; margin: 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
 .readable-data dd .readable-data { margin: 0; }
 .readable-data dd .readable-data > div { grid-template-columns: minmax(125px, .8fr) minmax(0, 1.6fr); }
+.plain-language-results { min-width: 0; }
+.plain-language-summary { margin: 16px 0; padding: 14px 15px; border-radius: 10px; background: var(--warm); color: #52613d; font-size: 14px; line-height: 1.7; white-space: pre-line; overflow-wrap: anywhere; }
 .readable-list { margin: 0; padding-left: 20px; }
 .readable-nested { display: grid; gap: 8px; }
 .readable-item { padding: 10px 12px; border-radius: 8px; background: #f7faf7; }
