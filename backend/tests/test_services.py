@@ -191,12 +191,14 @@ class ApiTests(unittest.TestCase):
     def test_health(self): self.assertEqual(self.client.get("/health").json["status"],"ok")
     def test_vercel_origin_is_allowed_for_browser_api_calls(self):
         origin="https://terra-rotate-ai.vercel.app"
-        preflight=self.client.options("/api/rotations",headers={"Origin":origin,"Access-Control-Request-Method":"POST"})
+        with patch.dict("os.environ",{"FLASK_CORS_ORIGINS":"http://localhost:3000"}):
+            client=create_app().test_client()
+        preflight=client.options("/api/rotations",headers={"Origin":origin,"Access-Control-Request-Method":"POST"})
         self.assertEqual(preflight.headers.get("Access-Control-Allow-Origin"),origin)
         climate_payload={"source":"NASA POWER","rows":[]}
         with patch("app.routes.fetch_power_daily",return_value=climate_payload):
-            climate=self.client.get("/api/climate?lat=33.7&lon=75.1",headers={"Origin":origin})
-        rotation=self.client.post("/api/rotations",json={"current_crop":"potato"},headers={"Origin":origin})
+            climate=client.get("/api/climate?lat=33.7&lon=75.1",headers={"Origin":origin})
+        rotation=client.post("/api/rotations",json={"current_crop":"potato"},headers={"Origin":origin})
         self.assertEqual(climate.status_code,200)
         self.assertEqual(climate.headers.get("Access-Control-Allow-Origin"),origin)
         self.assertEqual(rotation.status_code,200)

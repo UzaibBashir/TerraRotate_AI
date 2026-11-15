@@ -12,21 +12,14 @@ const modules = [
   ["memory","Farmer feedback memory","/intelligence/farmer-feedback","Bayesian Beta update for subjective feedback. Saved locally by default, or to your Supabase account when configured."],
 ];
 
-const hint = `Examples (replace with your real, sourced observations):
-Vegetation / bare windows:
-{"source":"NASA MODIS MOD13Q1 v061","index":"NDVI","resolution":"state native grid","observations":[{"date":"YYYY-MM-DD","value":0.42}]}
-
-Water:
-{"latitude":33.73,"longitude":75.15,"area_hectares":1,"crop_demand_mm":300,"irrigation_mm":40,"expected_rainfall_mm":{"dry":30,"normal":80,"wet":140}}
-
-Climate analogues (provide real candidate coordinates):
-{"field":{"latitude":33.73,"longitude":75.15},"candidates":[{"name":"Candidate site","latitude":34,"longitude":76}],"start_year":1991,"end_year":2020}
-
-Zones:
-{"zone_count":2,"features":["ndvi"],"source":"NASA product and version","resolution":"native pixel size","points":[{"latitude":33.7,"longitude":75.1,"ndvi":0.4},{"latitude":33.71,"longitude":75.11,"ndvi":0.7},{"latitude":33.72,"longitude":75.12,"ndvi":0.5}]}
-
-RotationRisk: no input is required.
-Feedback: {"helpful":true}`;
+const demoInputs = {
+  vegetation: `{"source":"Synthetic demo values (not observed NASA data)","index":"NDVI","resolution":"Illustrative sample only","observations":[{"date":"2026-05-01","value":0.28},{"date":"2026-06-01","value":0.46},{"date":"2026-07-01","value":0.63},{"date":"2026-08-01","value":0.58}]}`,
+  bare: `{"source":"Synthetic demo values (not observed NASA data)","index":"NDVI","resolution":"Illustrative sample only","low_threshold":0.2,"observations":[{"date":"2026-03-01","value":0.12},{"date":"2026-04-01","value":0.18},{"date":"2026-05-01","value":0.34},{"date":"2026-06-01","value":0.57}]}`,
+  water: `{"latitude":33.7311,"longitude":75.148,"area_hectares":74.1,"crop_demand_mm":300,"irrigation_mm":40,"expected_rainfall_mm":{"dry":30,"normal":80,"wet":140}}`,
+  climate: `{"field":{"latitude":33.7311,"longitude":75.148},"candidates":[{"name":"Demo candidate · Punjab","latitude":30.901,"longitude":75.8573},{"name":"Demo candidate · Karnataka","latitude":15.3173,"longitude":75.7139}],"start_year":1991,"end_year":2020}`,
+  zones: `{"zone_count":2,"features":["ndvi"],"source":"Synthetic demo measurements (not satellite observations)","resolution":"Illustrative sample points","points":[{"latitude":33.729,"longitude":75.144,"ndvi":0.31},{"latitude":33.73,"longitude":75.148,"ndvi":0.46},{"latitude":33.732,"longitude":75.152,"ndvi":0.68},{"latitude":33.734,"longitude":75.145,"ndvi":0.27}]}`
+};
+const hint = `Choose a module, then use “Load demo input” to try it. Demo vegetation and zone values are synthetic and are not satellite measurements. Water and climate examples use the illustrative demo field coordinates; those modules fetch NASA POWER data when run.`;
 
 export default function Tools() {
   const [selected,setSelected]=useState("vegetation"), [input,setInput]=useState(""), [output,setOutput]=useState(null), [error,setError]=useState(""), [busy,setBusy]=useState(false), [history,setHistory]=useState({helpful:0,not_helpful:0});
