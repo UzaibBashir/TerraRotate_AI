@@ -203,6 +203,13 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(climate.headers.get("Access-Control-Allow-Origin"),origin)
         self.assertEqual(rotation.status_code,200)
         self.assertEqual(rotation.headers.get("Access-Control-Allow-Origin"),origin)
+
+    def test_vercel_preview_origin_is_allowed_for_browser_api_calls(self):
+        origin="https://terra-rotate-ai-git-main-uzaibbashir.vercel.app"
+        client=create_app().test_client()
+        preflight=client.options("/api/rotations",headers={"Origin":origin,"Access-Control-Request-Method":"POST"})
+        self.assertEqual(preflight.headers.get("Access-Control-Allow-Origin"),origin)
+        self.assertEqual(preflight.headers.get("Access-Control-Allow-Methods"),"POST")
     def test_rejects_invalid_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=91&lon=0").status_code,400)
     def test_rejects_nonfinite_coordinates(self): self.assertEqual(self.client.get("/api/climate?lat=NaN&lon=0").status_code,400)
     def test_rejects_unknown_imagery_layer(self): self.assertEqual(self.client.get("/api/imagery?lat=33&lon=75&layer=other").status_code,400)
